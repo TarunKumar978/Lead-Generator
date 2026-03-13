@@ -1,5 +1,5 @@
 """
-Silasya & Shumitra — AI Lead Finder
+Silasya & Shoumitra — AI Lead Finder
 Flask + MySQL Backend
 """
 
@@ -119,49 +119,14 @@ def init_db():
     print("✅ Database initialized successfully")
 
 
-# ─── Auth ────────────────────────────────────────────────────────────────────
-
-APP_USERNAME = os.getenv("APP_USERNAME", "silasya")
-APP_PASSWORD = os.getenv("APP_PASSWORD", "silasya2025")
-
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get("logged_in"):
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "Unauthorized"}), 401
-            return render_template("login.html")
-        return f(*args, **kwargs)
-    return decorated
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        data = request.get_json(silent=True) or request.form
-        if data.get("username") == APP_USERNAME and data.get("password") == APP_PASSWORD:
-            session["logged_in"] = True
-            session["user"] = data.get("username")
-            return jsonify({"success": True})
-        return jsonify({"error": "Wrong username or password"}), 401
-    return render_template("login.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return render_template("login.html")
-
-
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/")
-@login_required
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/status")
-@login_required
 def status():
     try:
         conn = get_db()
@@ -178,7 +143,6 @@ def status():
 # ─── AI Search ───────────────────────────────────────────────────────────────
 
 @app.route("/api/search", methods=["POST"])
-@login_required
 def ai_search():
     try:
         data = request.get_json()
@@ -235,7 +199,7 @@ Return ONLY a valid JSON array with exactly 12 leads. Each lead must have these 
 - linkedin (string): LinkedIn URL
 - whatsapp (string): phone number
 - description (string): 1-2 sentence description
-- why_good (string): why this is a good lead for Silasya/Shumitra
+- why_good (string): why this is a good lead for Silasya/Shoumitra
 - potential_value (string): e.g. "High", "Medium", "$5,000-$10,000/month"
 - score (number): 1-100 lead quality score
 - tags (array of strings): relevant tags
@@ -277,7 +241,6 @@ Return ONLY the JSON array, no other text."""
 # ─── Save Lead ───────────────────────────────────────────────────────────────
 
 @app.route("/api/leads", methods=["GET"])
-@login_required
 def get_leads():
     try:
         conn = get_db()
@@ -323,7 +286,6 @@ def get_leads():
 
 
 @app.route("/api/leads", methods=["POST"])
-@login_required
 def save_lead():
     try:
         data = request.get_json()
@@ -375,7 +337,6 @@ def save_lead():
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["PUT"])
-@login_required
 def update_lead(lead_id):
     try:
         data = request.get_json()
@@ -393,7 +354,6 @@ def update_lead(lead_id):
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["DELETE"])
-@login_required
 def delete_lead(lead_id):
     try:
         conn = get_db()
@@ -410,7 +370,6 @@ def delete_lead(lead_id):
 # ─── Stats ───────────────────────────────────────────────────────────────────
 
 @app.route("/api/stats")
-@login_required
 def get_stats():
     try:
         conn = get_db()
@@ -433,7 +392,6 @@ def get_stats():
 # ─── Export CSV ──────────────────────────────────────────────────────────────
 
 @app.route("/api/export/csv")
-@login_required
 def export_csv():
     try:
         conn = get_db()
@@ -456,7 +414,6 @@ def export_csv():
 # ─── Team ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/team", methods=["GET"])
-@login_required
 def get_team():
     try:
         conn = get_db()
@@ -474,7 +431,6 @@ def get_team():
 
 
 @app.route("/api/team", methods=["POST"])
-@login_required
 def add_team():
     try:
         data = request.get_json()
@@ -494,7 +450,6 @@ def add_team():
 # ─── AI Outreach ─────────────────────────────────────────────────────────────
 
 @app.route("/api/outreach/<int:lead_id>", methods=["POST"])
-@login_required
 def generate_outreach(lead_id):
     try:
         data = request.get_json()
@@ -512,7 +467,7 @@ def generate_outreach(lead_id):
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shumitra (Indian organic brand).
+        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shoumitra (Indian organic brand).
 
 Lead: {lead.get('name')}
 Type: {lead.get('type')}
@@ -533,37 +488,14 @@ Write a short, friendly, professional {channel} message. Keep it under 150 words
         return jsonify({"error": str(e)}), 500
 
 
-# ─── Global Error Handlers (always return JSON, never HTML) ──────────────────
-
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify({"error": "Bad request", "message": str(e)}), 400
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({"error": "Endpoint not found", "message": str(e)}), 404
-
-@app.errorhandler(405)
-def method_not_allowed(e):
-    return jsonify({"error": "Method not allowed", "message": str(e)}), 405
-
-@app.errorhandler(500)
-def internal_error(e):
-    return jsonify({"error": "Internal server error", "message": str(e)}), 500
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return jsonify({"error": type(e).__name__, "message": str(e)}), 500
-
-
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("🚀 Starting Silasya & Shumitra Lead Finder...")
+    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
     print("📦 Initializing database...")
     init_db()
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "False").lower() == "true"  # Default OFF — debug=True bypasses error handlers
+    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
     print(f"✅ App running at http://localhost:{port}")
     print(f"📋 Share with team: http://YOUR_IP:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
