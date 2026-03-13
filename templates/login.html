@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silasya × Shumitra — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0b;--surface:#111113;--card:#16161a;--border:#252529;--gold:#c9a84c;--gold-light:#e8c87a;--green:#3ecf7a;--text:#f0ede8;--muted:#6e6b67;--accent:#cf4c4c}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+
+/* Background subtle pattern */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(76,142,207,0.04) 0%, transparent 60%);pointer-events:none}
+
+.login-box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px;position:relative;animation:fadeUp 0.4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* Gold top accent line */
+.login-box::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:60%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:2px}
+
+.brand{text-align:center;margin-bottom:32px}
+.brand-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:0.1em;color:var(--gold)}
+.brand-sub{font-size:10px;letter-spacing:0.25em;color:var(--muted);text-transform:uppercase;margin-top:4px}
+.brand-divider{width:40px;height:1px;background:var(--border);margin:16px auto}
+.brand-title{font-size:15px;font-weight:600;color:var(--text)}
+.brand-hint{font-size:11px;color:var(--muted);margin-top:4px}
+
+label{display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700}
+.field{margin-bottom:18px}
+input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.1)}
+input::placeholder{color:var(--muted)}
+
+.btn-login{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0a0a0b;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all 0.25s;margin-top:8px}
+.btn-login:hover{box-shadow:0 6px 24px rgba(201,168,76,0.35);transform:translateY(-1px)}
+.btn-login:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+.error-msg{background:rgba(207,76,76,0.1);border:1px solid rgba(207,76,76,0.3);color:var(--accent);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:16px;display:none;text-align:center}
+.error-msg.show{display:block}
+
+.footer{text-align:center;margin-top:24px;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <div class="brand">
+    <div class="brand-name">SILASYA × SHUMITRA</div>
+    <div class="brand-sub">AI Lead Finder — Team Edition</div>
+    <div class="brand-divider"></div>
+    <div class="brand-title">Team Login</div>
+    <div class="brand-hint">Only authorised team members can access this app</div>
+  </div>
+
+  <div class="error-msg" id="err">Wrong username or password. Try again.</div>
+
+  <div class="field">
+    <label>Username</label>
+    <input id="username" type="text" placeholder="Enter your username" autocomplete="username">
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+  </div>
+
+  <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In →</button>
+
+  <div class="footer">Silasya & Shumitra · Internal Use Only</div>
+</div>
+
+<script>
+// Allow Enter key to submit
+document.addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('err');
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) {
+    err.textContent = 'Please enter both username and password.';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  err.classList.remove('show');
+
+  try {
+    const r = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (d.success) {
+      btn.textContent = '✓ Welcome!';
+      window.location.href = '/';
+    } else {
+      err.textContent = 'Wrong username or password. Try again.';
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Sign In →';
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  } catch(e) {
+    err.textContent = 'Connection error. Please try again.';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Sign In →';
+  }
+}
+</script>
+</body>
+</html>

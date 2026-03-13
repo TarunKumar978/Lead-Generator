@@ -119,14 +119,49 @@ def init_db():
     print("✅ Database initialized successfully")
 
 
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
+APP_USERNAME = os.getenv("APP_USERNAME", "silasya")
+APP_PASSWORD = os.getenv("APP_PASSWORD", "silasya2025")
+
+def login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Unauthorized"}), 401
+            return render_template("login.html")
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form
+        if data.get("username") == APP_USERNAME and data.get("password") == APP_PASSWORD:
+            session["logged_in"] = True
+            session["user"] = data.get("username")
+            return jsonify({"success": True})
+        return jsonify({"error": "Wrong username or password"}), 401
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return render_template("login.html")
+
+
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/")
+@login_required
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/status")
+@login_required
 def status():
     try:
         conn = get_db()
@@ -143,6 +178,7 @@ def status():
 # ─── AI Search ───────────────────────────────────────────────────────────────
 
 @app.route("/api/search", methods=["POST"])
+@login_required
 def ai_search():
     try:
         data = request.get_json()
@@ -241,6 +277,7 @@ Return ONLY the JSON array, no other text."""
 # ─── Save Lead ───────────────────────────────────────────────────────────────
 
 @app.route("/api/leads", methods=["GET"])
+@login_required
 def get_leads():
     try:
         conn = get_db()
@@ -286,6 +323,7 @@ def get_leads():
 
 
 @app.route("/api/leads", methods=["POST"])
+@login_required
 def save_lead():
     try:
         data = request.get_json()
@@ -337,6 +375,7 @@ def save_lead():
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["PUT"])
+@login_required
 def update_lead(lead_id):
     try:
         data = request.get_json()
@@ -354,6 +393,7 @@ def update_lead(lead_id):
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["DELETE"])
+@login_required
 def delete_lead(lead_id):
     try:
         conn = get_db()
@@ -370,6 +410,7 @@ def delete_lead(lead_id):
 # ─── Stats ───────────────────────────────────────────────────────────────────
 
 @app.route("/api/stats")
+@login_required
 def get_stats():
     try:
         conn = get_db()
@@ -392,6 +433,7 @@ def get_stats():
 # ─── Export CSV ──────────────────────────────────────────────────────────────
 
 @app.route("/api/export/csv")
+@login_required
 def export_csv():
     try:
         conn = get_db()
@@ -414,6 +456,7 @@ def export_csv():
 # ─── Team ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/team", methods=["GET"])
+@login_required
 def get_team():
     try:
         conn = get_db()
@@ -431,6 +474,7 @@ def get_team():
 
 
 @app.route("/api/team", methods=["POST"])
+@login_required
 def add_team():
     try:
         data = request.get_json()
@@ -450,6 +494,7 @@ def add_team():
 # ─── AI Outreach ─────────────────────────────────────────────────────────────
 
 @app.route("/api/outreach/<int:lead_id>", methods=["POST"])
+@login_required
 def generate_outreach(lead_id):
     try:
         data = request.get_json()
