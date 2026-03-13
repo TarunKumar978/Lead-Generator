@@ -3,120 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Silasya × Shumitra — AI Lead Finder</title>
+<title>Silasya × Shoumitra — AI Lead Finder</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0a0b;--surface:#111113;--card:#16161a;--border:#252529;--gold:#c9a84c;--gold-light:#e8c87a;--blue:#4c8ecf;--green:#3ecf7a;--wa:#25d366;--ig:#e1306c;--fb:#1877f2;--li:#0a66c2;--text:#f0ede8;--muted:#6e6b67;--accent:#cf4c4c;--purple:#9b6cf5}
+:root{
+  --bg:#0a0a0b;--surface:#111113;--card:#16161a;--border:#252529;
+  --gold:#c9a84c;--gold-light:#e8c87a;--blue:#4c8ecf;--green:#3ecf7a;
+  --wa:#25d366;--ig:#e1306c;--fb:#1877f2;--li:#0a66c2;
+  --text:#f0ede8;--muted:#6e6b67;--accent:#cf4c4c;--purple:#9b6cf5;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
-/* header */
+
+/* ── Header ── */
 header{display:flex;align-items:center;justify-content:space-between;padding:16px 36px;border-bottom:1px solid var(--border);background:rgba(10,10,11,0.98);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200}
 .brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;letter-spacing:0.08em;color:var(--gold)}
 .brand-sub{font-size:9px;letter-spacing:0.25em;color:var(--muted);text-transform:uppercase}
-.header-right{display:flex;align-items:center;gap:12px}
 .hbadge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
 .hb-b2c{background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.25)}
 .hb-b2b{background:rgba(76,142,207,0.12);color:var(--blue);border:1px solid rgba(76,142,207,0.25)}
-.db-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
-.db-label{font-size:11px;color:var(--muted)}
-/* nav tabs */
+
+/* ── Nav Tabs ── */
 .nav-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 36px}
-.nav-tab{padding:14px 20px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s}
+.nav-tab{padding:13px 20px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s}
 .nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .nav-tab:hover:not(.active){color:var(--text)}
-/* layout */
-.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
+
+/* ── API Key Banner ── */
+.api-banner{background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:16px 22px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.api-banner.hidden{display:none}
+.api-label{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap}
+.api-input-wrap{flex:1;min-width:280px;position:relative}
+.api-input-wrap input{padding-right:100px;font-family:'Courier New',monospace;font-size:12px}
+.api-save-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:5px 14px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:6px;color:#0a0a0b;font-size:11px;font-weight:700;cursor:pointer}
+.api-status{font-size:11px;color:var(--muted);white-space:nowrap}
+.api-status.ok{color:var(--green)}
+
+/* ── Layout ── */
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
 .page{display:none}.page.active{display:block;animation:fadeUp 0.3s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-/* cards / inputs */
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-c{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.stat-l{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.stat-v{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gold)}
+.stat-n{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Panel ── */
 .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:22px}
 .panel-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:4px}
 .panel-title span{color:var(--gold)}
 .panel-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+
+/* ── Form ── */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
 .full{grid-column:1/-1}
 label{display:block;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:700}
 input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
 input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.1)}
 select option{background:var(--card)}
-textarea{resize:vertical;min-height:80px}
-/* user tag */
-.user-tag{display:flex;align-items:center;gap:8px;margin-bottom:18px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
-.user-tag label{margin:0;font-size:11px}
-.user-tag input{padding:6px 10px;font-size:12px}
-/* channels */
-.channel-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.ch{display:flex;align-items:center;gap:5px;padding:6px 13px;border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;transition:all 0.2s;color:var(--muted);background:var(--surface);user-select:none;font-weight:500}
+
+/* ── Channel chips ── */
+.ch-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.ch{display:flex;align-items:center;gap:5px;padding:7px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--muted);background:var(--surface);user-select:none;font-weight:500}
+.ch:hover{border-color:var(--gold);color:var(--gold)}
 .ch.on{background:rgba(201,168,76,0.1);border-color:var(--gold);color:var(--gold)}
-.ch.on.wa{background:rgba(37,211,102,0.1);border-color:var(--wa);color:var(--wa)}
-.ch.on.ig{background:rgba(225,48,108,0.1);border-color:var(--ig);color:var(--ig)}
-.ch.on.fb{background:rgba(24,119,242,0.1);border-color:var(--fb);color:var(--fb)}
-.ch.on.li{background:rgba(10,102,194,0.1);border-color:var(--li);color:var(--li)}
-.ch.on.pu{background:rgba(155,108,245,0.1);border-color:var(--purple);color:var(--purple)}
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;cursor:pointer;transition:all 0.25s}
-.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0a0a0b}
-.btn-gold:hover{box-shadow:0 6px 22px rgba(201,168,76,0.4);transform:translateY(-1px)}
-.btn-run{width:100%;justify-content:center;padding:14px;font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-top:4px}
-.btn-outline{background:none;border:1px solid var(--border);color:var(--muted)}
-.btn-outline:hover{border-color:var(--text);color:var(--text)}
-.btn-red{background:rgba(207,76,76,0.1);border:1px solid rgba(207,76,76,0.3);color:var(--accent)}
-.btn-red:hover{background:rgba(207,76,76,0.2)}
-.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
-/* stats */
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-.stat-c{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
-.stat-l{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.stat-v{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)}
-.stat-n{font-size:10px;color:var(--muted);margin-top:3px}
-/* progress */
-.prog-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:22px;display:none}
+.ch.on.c-wa{background:rgba(37,211,102,0.1);border-color:var(--wa);color:var(--wa)}
+.ch.on.c-ig{background:rgba(225,48,108,0.1);border-color:var(--ig);color:var(--ig)}
+.ch.on.c-fb{background:rgba(24,119,242,0.1);border-color:var(--fb);color:var(--fb)}
+.ch.on.c-li{background:rgba(10,102,194,0.1);border-color:var(--li);color:var(--li)}
+.ch.on.c-pu{background:rgba(155,108,245,0.1);border-color:var(--purple);color:var(--purple)}
+
+/* ── Run Button ── */
+.run-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0a0a0b;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.3s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:10px}
+.run-btn:hover{box-shadow:0 8px 28px rgba(201,168,76,0.4);transform:translateY(-2px)}
+.run-btn:active{transform:translateY(0)}
+.run-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ── Progress ── */
+.prog-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;display:none}
 .prog-box.show{display:block;animation:fadeUp 0.3s ease}
-.prog-title{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px}
+.prog-title{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
 .prog-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px}
-.prog-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:3px;transition:width 0.4s ease;width:0%}
-.prog-steps{display:flex;flex-direction:column;gap:5px}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:3px;transition:width 0.5s ease;width:0%}
+.prog-steps{display:flex;flex-direction:column;gap:6px}
 .ps{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);transition:color 0.3s}
 .ps.act{color:var(--text)}.ps.done{color:var(--green)}
 .pd{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background 0.3s}
 .ps.act .pd{background:var(--gold);animation:pulse 1s infinite}
 .ps.done .pd{background:var(--green)}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
-/* results */
-.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.results-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700}
+
+/* ── Results ── */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.results-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
 .results-title span{color:var(--gold)}
 .filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .fb{padding:5px 13px;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .fb.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1)}
 .fb:hover:not(.active){color:var(--text)}
-/* lead card */
-.lc{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:12px;transition:border-color 0.2s}
+
+/* ── Lead Card ── */
+.lc{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:20px;margin-bottom:12px;transition:border-color 0.2s}
 .lc:hover{border-color:rgba(201,168,76,0.2)}
-.lc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
-.lc-name{font-weight:700;font-size:14px;margin-bottom:3px}
+.lc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.lc-name{font-weight:700;font-size:15px;margin-bottom:4px}
 .lc-badges{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
 .lb{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
 .lb-b2c{background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
 .lb-b2b{background:rgba(76,142,207,0.1);color:var(--blue);border:1px solid rgba(76,142,207,0.2)}
-.ls{font-size:10px;color:var(--muted)}
-.lc-desc{font-size:12px;color:#b0aca6;line-height:1.6;margin-bottom:8px}
-.lc-why{font-size:11px;color:var(--green);font-style:italic;margin-bottom:8px}
-.lc-val{font-size:11px;color:var(--gold);margin-bottom:8px}
+.lc-src{font-size:10px;color:var(--muted)}
+.lc-desc{font-size:12px;color:#b0aca6;line-height:1.65;margin-bottom:8px}
+.lc-why{font-size:11px;color:var(--green);font-style:italic;margin-bottom:7px}
+.lc-val{font-size:11px;color:var(--gold);margin-bottom:9px}
 .lc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .ltag{padding:2px 8px;border-radius:8px;font-size:10px;background:rgba(255,255,255,0.04);color:var(--muted);border:1px solid var(--border)}
-.lc-contact{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.lc-contacts{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
 .ci{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
 .ci a{color:inherit;text-decoration:none}.ci a:hover{color:var(--gold)}
-/* score ring */
-.sr{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;border:2px solid;flex-shrink:0}
+
+/* ── Score ring ── */
+.sr{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:17px;font-weight:700;border:2px solid;flex-shrink:0}
 .sr-hot{border-color:var(--accent);color:var(--accent);background:rgba(207,76,76,0.1)}
 .sr-warm{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1)}
 .sr-new{border-color:var(--green);color:var(--green);background:rgba(62,207,122,0.1)}
-/* card actions */
+
+/* ── Card Actions ── */
 .ca{display:flex;gap:7px;flex-wrap:wrap}
-.cab{display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s}
+.cab{display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s;white-space:nowrap}
 .cab:hover{transform:translateY(-1px)}
 .cab.cwa:hover{border-color:var(--wa);color:var(--wa);background:rgba(37,211,102,0.08)}
 .cab.cig:hover{border-color:var(--ig);color:var(--ig);background:rgba(225,48,108,0.08)}
@@ -127,41 +143,51 @@ textarea{resize:vertical;min-height:80px}
 .cab.csave:hover{border-color:var(--gold)}
 .cab.saved{background:rgba(62,207,122,0.1);border-color:var(--green);color:var(--green)}
 .cab.cai:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
-/* stored leads table */
-.leads-table-wrap{overflow-x:auto}
+
+/* ── Stored / CRM ── */
+.crm-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.crm-filters{display:flex;gap:8px;flex-wrap:wrap}
+.leads-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{padding:10px 14px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);background:var(--surface);white-space:nowrap}
 td{padding:12px 14px;font-size:12px;color:var(--text);border-bottom:1px solid rgba(37,37,41,0.8);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,0.02)}
-.status-pill{padding:2px 9px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
+.sp{padding:2px 9px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
 .sp-hot{background:rgba(207,76,76,0.12);color:var(--accent)}
 .sp-warm{background:rgba(201,168,76,0.12);color:var(--gold)}
 .sp-new{background:rgba(62,207,122,0.12);color:var(--green)}
 .sp-contacted{background:rgba(76,142,207,0.12);color:var(--blue)}
 .sp-converted{background:rgba(155,108,245,0.12);color:var(--purple)}
-/* outreach modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:center;justify-content:center}
+.soc-row{display:flex;gap:5px;align-items:center}
+.soc-ico{font-size:14px;text-decoration:none;opacity:0.5;transition:opacity 0.2s}
+.soc-ico:hover{opacity:1}
+.soc-ico.has{opacity:1}
+
+/* ── Outreach Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:500;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
 .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:640px;width:93%;max-height:85vh;overflow-y:auto;animation:fadeUp 0.3s ease}
-.modal-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.modal-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;color:var(--gold)}
 .modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
-.modal-body{font-size:13px;line-height:1.8;color:#d0ccc6;white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
-.modal-actions{display:flex;gap:8px}
-.modal-close-btn{margin-top:12px;width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:12px}
+.modal-body{font-size:13px;line-height:1.8;color:#d0ccc6;white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;max-height:400px;overflow-y:auto}
+.modal-close-btn{width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:12px;margin-top:4px}
 .modal-close-btn:hover{border-color:var(--text);color:var(--text)}
-/* empty */
-.empty{padding:36px;text-align:center;color:var(--muted);font-size:13px}
-.empty-icon{font-size:30px;margin-bottom:8px;opacity:0.3}
-/* team */
-.member-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.mc-name{font-weight:700;font-size:14px}
-.mc-email{font-size:11px;color:var(--muted);margin-top:2px}
-.role-badge{padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
-/* responsive */
-@media(max-width:700px){
-  header{padding:12px 16px}.nav-tabs{padding:0 16px}.wrap{padding:18px 12px 60px}
-  .stats-row{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0a0a0b}
+.btn-gold:hover{box-shadow:0 6px 20px rgba(201,168,76,0.4);transform:translateY(-1px)}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--text);color:var(--text)}
+
+/* ── Empty ── */
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:0.3}
+
+@media(max-width:640px){
+  header{padding:12px 16px}.nav-tabs{padding:0 12px}.wrap{padding:18px 12px 60px}
+  .stats-row{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}
   .lc-top{flex-direction:column}
 }
 </style>
@@ -170,54 +196,53 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 <header>
   <div>
-    <div class="brand-name">SILASYA × SHUMITRA</div>
-    <div class="brand-sub">AI Lead Finder — Team Edition</div>
+    <div class="brand-name">SILASYA × SHOUMITRA</div>
+    <div class="brand-sub">AI Lead Finder — Standalone Edition</div>
   </div>
-  <div class="header-right">
-    <span class="hbadge hb-b2c">B2C</span>
-    <span class="hbadge hb-b2b">B2B</span>
-    <div class="db-dot" id="db-dot" title="Database status"></div>
-    <span class="db-label" id="db-label">Connecting…</span>
-    <a href="/logout" style="padding:5px 13px;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</a>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="hbadge hb-b2c">B2C · Silasya</span>
+    <span class="hbadge hb-b2b">B2B · Shoumitra</span>
   </div>
 </header>
 
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showPage('search',this)">⚡ Find Leads</div>
   <div class="nav-tab" onclick="showPage('crm',this)">📋 Lead Bank</div>
-  <div class="nav-tab" onclick="showPage('team',this)">👥 Team</div>
 </div>
 
 <div class="wrap">
+
+  <!-- API Key Banner -->
+  <div class="api-banner" id="api-banner">
+    <div class="api-label">🔑 Anthropic API Key</div>
+    <div class="api-input-wrap">
+      <input type="password" id="api-key-input" placeholder="Paste your API key here: sk-ant-api03-...">
+      <button class="api-save-btn" onclick="saveApiKey()">Save</button>
+    </div>
+    <div class="api-status" id="api-status">Required to search for leads</div>
+  </div>
 
   <!-- ══ SEARCH PAGE ══ -->
   <div class="page active" id="page-search">
 
     <div class="stats-row">
-      <div class="stat-c"><div class="stat-l">Total Leads</div><div class="stat-v" id="st-total">—</div><div class="stat-n">In database</div></div>
-      <div class="stat-c"><div class="stat-l">Hot 🔥</div><div class="stat-v" id="st-hot">—</div><div class="stat-n">Score ≥ 80</div></div>
-      <div class="stat-c"><div class="stat-l">B2C</div><div class="stat-v" id="st-b2c">—</div><div class="stat-n">Silasya buyers</div></div>
-      <div class="stat-c"><div class="stat-l">B2B</div><div class="stat-v" id="st-b2b">—</div><div class="stat-n">Export buyers</div></div>
-      <div class="stat-c"><div class="stat-l">Countries</div><div class="stat-v" id="st-countries">—</div><div class="stat-n">Markets</div></div>
+      <div class="stat-c"><div class="stat-l">Stored Leads</div><div class="stat-v" id="st-total">0</div><div class="stat-n">In lead bank</div></div>
+      <div class="stat-c"><div class="stat-l">🔥 Hot</div><div class="stat-v" id="st-hot">0</div><div class="stat-n">Score ≥ 80</div></div>
+      <div class="stat-c"><div class="stat-l">B2C Leads</div><div class="stat-v" id="st-b2c">0</div><div class="stat-n">Silasya buyers</div></div>
+      <div class="stat-c"><div class="stat-l">B2B Leads</div><div class="stat-v" id="st-b2b">0</div><div class="stat-n">Export buyers</div></div>
     </div>
 
     <div class="panel">
       <div class="panel-title">Find <span>New Leads</span> with AI</div>
-      <div class="panel-sub">AI searches across Google, LinkedIn, Instagram, Facebook, IndiaMART, Alibaba, Etsy, Fab India, trade directories and more — bringing you real, actionable leads for Silasya & Shumitra</div>
-
-      <!-- Who is searching -->
-      <div class="user-tag">
-        <label>Your Name (so team knows who found these leads)</label>
-        <input id="searcher-name" placeholder="e.g. Rahul, Priya, Admin…" style="width:220px" value="Team Member">
-      </div>
+      <div class="panel-sub">AI searches across Google, LinkedIn, Instagram, Facebook, IndiaMART, Alibaba, Etsy, Fab India, trade directories and more — delivering real, actionable leads for both businesses</div>
 
       <div class="grid2">
         <div>
           <label>Business Focus</label>
           <select id="s-business">
-            <option value="both">Both — Silasya (B2C) + Shumitra (B2B)</option>
+            <option value="both">Both — Silasya (B2C) + Shoumitra (B2B)</option>
             <option value="b2c">Silasya only — B2C Customers</option>
-            <option value="b2b">Shumitra only — B2B Export Buyers</option>
+            <option value="b2b">Shoumitra only — B2B Export Buyers</option>
           </select>
         </div>
         <div>
@@ -225,12 +250,12 @@ tr:hover td{background:rgba(255,255,255,0.02)}
           <input id="s-country" placeholder="India, USA, UK, UAE, Germany, Worldwide…">
         </div>
         <div>
-          <label>Product / Niche</label>
+          <label>Product / Niche Focus</label>
           <select id="s-niche">
-            <option value="organic apparel clothing">Organic Apparel / Clothing</option>
-            <option value="organic toys children products">Organic Toys / Kids</option>
-            <option value="home decor sustainable living">Home Décor / Sustainable Living</option>
-            <option value="organic gift sets lifestyle">Organic Gift Sets / Lifestyle</option>
+            <option value="organic apparel clothing fashion">Organic Apparel / Clothing</option>
+            <option value="organic toys children kids products">Organic Toys / Kids Products</option>
+            <option value="home decor sustainable living interiors">Home Décor / Sustainable Living</option>
+            <option value="organic gift sets lifestyle wellness">Organic Gift Sets / Lifestyle</option>
             <option value="fair trade handcrafted artisan export">Handcrafted / Artisan Export</option>
             <option value="all organic products categories">All Categories</option>
           </select>
@@ -238,63 +263,63 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         <div>
           <label>Lead Type</label>
           <select id="s-leadtype">
-            <option value="all types">All Types</option>
-            <option value="end customers organic buyers">End Customers / Buyers</option>
-            <option value="wholesale importers distributors">Wholesalers / Importers</option>
-            <option value="boutique stores eco retailers">Boutique Stores / Retailers</option>
-            <option value="instagram facebook organic lifestyle pages influencers">Social Media Pages</option>
-            <option value="ecommerce platforms marketplaces">E-Commerce Platforms</option>
-            <option value="fair trade NGO sustainable organizations">Fair Trade / NGO</option>
+            <option value="all types mixed">All Types</option>
+            <option value="end customers organic buyers individuals">End Customers / Buyers</option>
+            <option value="wholesale importers distributors bulk buyers">Wholesalers / Importers</option>
+            <option value="boutique stores eco retailers shops">Boutique Stores / Retailers</option>
+            <option value="instagram facebook organic lifestyle pages influencers creators">Social Media Pages / Influencers</option>
+            <option value="ecommerce platforms online marketplaces">E-Commerce Platforms</option>
+            <option value="fair trade NGO sustainable organizations foundations">Fair Trade / NGO</option>
           </select>
         </div>
         <div class="full">
           <label>Search Channels</label>
-          <div class="channel-row">
-            <div class="ch on" onclick="this.classList.toggle('on')" data-v="Google Search and web directories">🔍 Google</div>
-            <div class="ch li on" onclick="this.classList.toggle('on')" data-v="LinkedIn companies profiles">💼 LinkedIn</div>
-            <div class="ch ig on" onclick="this.classList.toggle('on')" data-v="Instagram business pages handles">📸 Instagram</div>
-            <div class="ch fb on" onclick="this.classList.toggle('on')" data-v="Facebook pages groups">👤 Facebook</div>
-            <div class="ch wa on" onclick="this.classList.toggle('on')" data-v="WhatsApp Business listings">📲 WhatsApp Biz</div>
-            <div class="ch pu on" onclick="this.classList.toggle('on')" data-v="IndiaMART TradeIndia Alibaba Fab India Global Sources trade directories">📦 Trade Directories</div>
-            <div class="ch pu on" onclick="this.classList.toggle('on')" data-v="Amazon Flipkart Etsy Myntra Nykaa marketplaces">🛒 Marketplaces</div>
-            <div class="ch on" onclick="this.classList.toggle('on')" data-v="industry blogs organic lifestyle websites eco publications">🌐 Industry Sites</div>
+          <div class="ch-row">
+            <div class="ch on" onclick="this.classList.toggle('on')" data-v="Google Search web directories">🔍 Google</div>
+            <div class="ch c-li on" onclick="this.classList.toggle('on')" data-v="LinkedIn companies profiles pages">💼 LinkedIn</div>
+            <div class="ch c-ig on" onclick="this.classList.toggle('on')" data-v="Instagram business handles pages">📸 Instagram</div>
+            <div class="ch c-fb on" onclick="this.classList.toggle('on')" data-v="Facebook pages groups marketplace">👤 Facebook</div>
+            <div class="ch c-wa on" onclick="this.classList.toggle('on')" data-v="WhatsApp Business listings">📲 WhatsApp</div>
+            <div class="ch c-pu on" onclick="this.classList.toggle('on')" data-v="IndiaMART TradeIndia Alibaba Fab India Global Sources JustDial trade directories">📦 Trade Directories</div>
+            <div class="ch c-pu on" onclick="this.classList.toggle('on')" data-v="Amazon Flipkart Etsy Myntra Nykaa Meesho marketplaces">🛒 Marketplaces</div>
+            <div class="ch on" onclick="this.classList.toggle('on')" data-v="industry blogs organic lifestyle websites eco publications news">🌐 Industry Sites</div>
           </div>
         </div>
         <div class="full">
-          <label>Extra Keywords / Instructions</label>
+          <label>Extra Keywords / Instructions (optional)</label>
           <input id="s-keywords" placeholder="e.g. organic baby stores Germany, sustainable fashion UK, eco gift wholesalers UAE…">
         </div>
       </div>
-      <button class="btn btn-gold btn-run" id="run-btn" onclick="runSearch()">
-        ⚡ Find Leads Now — AI Searching All Platforms
+      <button class="run-btn" id="run-btn" onclick="runSearch()">
+        ⚡ Find Leads Now
       </button>
     </div>
 
     <!-- Progress -->
     <div class="prog-box" id="prog-box">
-      <div class="prog-title" id="prog-title">⟳ AI Searching Across Platforms…</div>
+      <div class="prog-title">⟳ AI Searching Across All Platforms…</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar"></div></div>
       <div class="prog-steps" id="prog-steps"></div>
     </div>
 
     <!-- Results -->
-    <div id="results-area" style="display:none">
+    <div id="results-area" style="display:none;animation:fadeUp 0.4s ease">
       <div class="results-header">
         <div>
           <div class="results-title">Found <span id="found-count">0</span> Leads</div>
-          <div style="font-size:12px;color:var(--muted)" id="results-meta"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="results-meta"></div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-gold" style="padding:8px 18px;font-size:12px" onclick="saveAllLeads()">💾 Save All to Database</button>
-          <button class="btn btn-outline" style="padding:8px 16px;font-size:12px" onclick="clearResults()">✕ Clear</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="saveAll()">💾 Save All</button>
+          <button class="btn btn-outline" onclick="clearResults()">✕ Clear</button>
         </div>
       </div>
       <div class="filter-row">
-        <button class="fb active" onclick="filterRes('all',this)">All</button>
-        <button class="fb" onclick="filterRes('b2c',this)">B2C</button>
-        <button class="fb" onclick="filterRes('b2b',this)">B2B</button>
-        <button class="fb" onclick="filterRes('hot',this)">🔥 Hot</button>
-        <button class="fb" onclick="filterRes('warm',this)">🌤 Warm</button>
+        <button class="fb active" onclick="filterLeads('all',this)">All</button>
+        <button class="fb" onclick="filterLeads('b2c',this)">B2C</button>
+        <button class="fb" onclick="filterLeads('b2b',this)">B2B</button>
+        <button class="fb" onclick="filterLeads('hot',this)">🔥 Hot</button>
+        <button class="fb" onclick="filterLeads('warm',this)">🌤 Warm</button>
       </div>
       <div id="leads-container"></div>
     </div>
@@ -302,395 +327,433 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
   <!-- ══ CRM PAGE ══ -->
   <div class="page" id="page-crm">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div class="crm-toolbar">
       <div>
-        <div class="panel-title">Lead <span>Bank</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">All leads saved by your team — shared in real time</div>
+        <div class="panel-title" style="font-size:20px">Lead <span style="color:var(--gold)">Bank</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">All saved leads — stored in your browser</div>
       </div>
-      <div style="display:flex;gap:8px">
-        <input id="crm-search" placeholder="🔍 Search leads…" style="width:200px;padding:8px 12px;font-size:12px" oninput="loadCRMLeads()">
-        <select id="crm-type" style="width:110px;padding:8px;font-size:12px" onchange="loadCRMLeads()">
-          <option value="">All Types</option>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="crm-search" placeholder="🔍 Search…" style="width:180px;padding:8px 12px;font-size:12px" oninput="renderCRM()">
+        <select id="crm-filter" style="width:110px;padding:8px;font-size:12px" onchange="renderCRM()">
+          <option value="">All</option>
           <option value="b2c">B2C</option>
           <option value="b2b">B2B</option>
-        </select>
-        <select id="crm-status" style="width:130px;padding:8px;font-size:12px" onchange="loadCRMLeads()">
-          <option value="">All Status</option>
-          <option value="new">New</option>
-          <option value="warm">Warm</option>
           <option value="hot">Hot</option>
-          <option value="contacted">Contacted</option>
-          <option value="converted">Converted</option>
+          <option value="warm">Warm</option>
         </select>
-        <a href="/api/export/csv" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none">⬇ CSV</a>
+        <button class="btn btn-gold" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn btn-outline" onclick="clearAll()">Clear All</button>
       </div>
     </div>
     <div class="panel" style="padding:0;overflow:hidden">
-      <div class="leads-table-wrap">
-        <table id="crm-table">
+      <div class="leads-wrap">
+        <table>
           <thead><tr>
-            <th>Type</th><th>Name</th><th>Email</th><th>Country</th>
-            <th>Category</th><th>Score</th><th>Status</th><th>Reach Out</th><th>By</th><th>Date</th><th></th>
+            <th>Type</th><th>Name</th><th>Email / Contact</th><th>Country</th>
+            <th>Category</th><th>Score</th><th>Status</th><th>Reach Out</th><th>Value</th><th></th>
           </tr></thead>
-          <tbody id="crm-body">
-            <tr><td colspan="11"><div class="empty"><div class="empty-icon">📋</div>Loading leads…</div></td></tr>
-          </tbody>
+          <tbody id="crm-body"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ══ TEAM PAGE ══ -->
-  <div class="page" id="page-team">
-    <div class="panel-title" style="margin-bottom:4px">Team <span style="color:var(--gold)">Members</span></div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:22px">Everyone on this list can use the Lead Finder and share leads in real time</div>
-
-    <div class="panel" style="margin-bottom:20px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px">Add New Member</div>
-      <div class="grid3">
-        <div><label>Full Name</label><input id="tm-name" placeholder="e.g. Priya Sharma"></div>
-        <div><label>Email</label><input id="tm-email" type="email" placeholder="priya@silasya.com"></div>
-        <div><label>Role</label>
-          <select id="tm-role"><option value="member">Member</option><option value="admin">Admin</option></select>
-        </div>
-      </div>
-      <button class="btn btn-gold" onclick="addMember()" style="margin-top:4px">+ Add Member</button>
-    </div>
-
-    <div id="team-list"><div class="empty"><div class="empty-icon">👥</div>Loading team…</div></div>
-  </div>
-
 </div>
 
 <!-- Outreach Modal -->
-<div class="modal-bg" id="outreach-modal">
+<div class="modal-bg" id="outreach-modal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
-    <div class="modal-title" id="modal-lead-name">AI Outreach</div>
-    <div class="modal-sub">Personalized messages for all platforms</div>
+    <div class="modal-title" id="modal-title">AI Outreach Scripts</div>
+    <div class="modal-sub">Personalized messages for WhatsApp · Instagram · Facebook · LinkedIn · Email</div>
     <div class="modal-body" id="modal-body">Generating…</div>
-    <div class="modal-actions">
-      <button class="btn btn-gold" onclick="copyOutreach()" style="padding:9px 18px;font-size:12px">Copy All</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gold" onclick="navigator.clipboard.writeText(document.getElementById('modal-body').textContent).then(()=>alert('Copied!'))">Copy All</button>
     </div>
     <button class="modal-close-btn" onclick="document.getElementById('outreach-modal').classList.remove('open')">✕ Close</button>
   </div>
 </div>
 
 <script>
-const API = '';  // same origin
-let currentResults = [];
+// ── State ────────────────────────────────────────────────────────────────────
+let stored = JSON.parse(localStorage.getItem('slsm_leads') || '[]');
+let current = [];
 
-// ── Navigation ───────────────────────────────────────────────────────────────
-function showPage(id, tab) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  tab.classList.add('active');
-  if (id==='crm') loadCRMLeads();
-  if (id==='team') loadTeam();
+function persist() {
+  localStorage.setItem('slsm_leads', JSON.stringify(stored));
+  updateStats();
 }
 
-// ── DB Status ────────────────────────────────────────────────────────────────
-async function checkStatus() {
-  try {
-    const r = await fetch(API+'/api/status');
-    const d = await r.json();
-    if (d.status==='ok') {
-      document.getElementById('db-dot').style.background='var(--green)';
-      document.getElementById('db-label').textContent='Database connected';
-      loadStats();
-    } else { throw new Error(); }
-  } catch {
-    document.getElementById('db-dot').style.background='var(--accent)';
-    document.getElementById('db-label').textContent='DB error';
+// ── API Key ──────────────────────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('slsm_apikey') || ''; }
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) { alert('Invalid key. It should start with sk-ant-'); return; }
+  localStorage.setItem('slsm_apikey', key);
+  document.getElementById('api-status').textContent = '✓ Key saved';
+  document.getElementById('api-status').className = 'api-status ok';
+  document.getElementById('api-banner').classList.add('hidden');
+}
+
+function initApiKey() {
+  const key = getApiKey();
+  if (key) {
+    document.getElementById('api-key-input').value = key;
+    document.getElementById('api-status').textContent = '✓ Key saved';
+    document.getElementById('api-status').className = 'api-status ok';
+    document.getElementById('api-banner').classList.remove('hidden'); // keep visible so they can change it
   }
 }
 
-// ── Stats ────────────────────────────────────────────────────────────────────
-async function loadStats() {
-  try {
-    const r = await fetch(API+'/api/stats');
-    const d = await r.json();
-    document.getElementById('st-total').textContent = d.total||0;
-    document.getElementById('st-hot').textContent = d.hot||0;
-    document.getElementById('st-b2c').textContent = d.b2c||0;
-    document.getElementById('st-b2b').textContent = d.b2b||0;
-    document.getElementById('st-countries').textContent = d.countries||0;
-  } catch(e) { console.error(e); }
+// ── Navigation ───────────────────────────────────────────────────────────────
+function showPage(id, tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  tab.classList.add('active');
+  if (id === 'crm') renderCRM();
 }
 
-// ── Search ───────────────────────────────────────────────────────────────────
+// ── Stats ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('st-total').textContent = stored.length;
+  document.getElementById('st-hot').textContent = stored.filter(l => l.score >= 80).length;
+  document.getElementById('st-b2c').textContent = stored.filter(l => l.type === 'b2c').length;
+  document.getElementById('st-b2b').textContent = stored.filter(l => l.type === 'b2b').length;
+}
+
+// ── Progress animation ────────────────────────────────────────────────────────
 const STEPS = [
   'Reading your search criteria…',
-  'Searching Google & trade directories…',
+  'Searching Google & web directories…',
   'Scanning LinkedIn for buyers & importers…',
   'Checking Instagram & Facebook pages…',
-  'Searching IndiaMART, Alibaba, Etsy, Fab India…',
+  'Searching IndiaMART, Alibaba, Fab India…',
   'Finding boutique stores & retailers…',
-  'Scoring and validating each lead…',
+  'Scoring and ranking each lead…',
   'Building contact information…',
 ];
 
 function animateProgress(done) {
-  const box=document.getElementById('prog-box'), bar=document.getElementById('prog-bar'), stDiv=document.getElementById('prog-steps');
+  const box = document.getElementById('prog-box');
+  const bar = document.getElementById('prog-bar');
+  const stDiv = document.getElementById('prog-steps');
   box.classList.add('show');
-  stDiv.innerHTML = STEPS.map((s,i)=>`<div class="ps" id="ps-${i}"><div class="pd"></div><span>${s}</span></div>`).join('');
-  let i=0;
-  function next(){
-    if(i>0){const prev=document.getElementById(`ps-${i-1}`);if(prev){prev.classList.remove('act');prev.classList.add('done');}}
-    if(i<STEPS.length){
-      const cur=document.getElementById(`ps-${i}`);if(cur)cur.classList.add('act');
-      bar.style.width=((i+1)/STEPS.length*95)+'%';
-      i++;setTimeout(next,550+Math.random()*350);
-    } else {bar.style.width='100%';setTimeout(()=>{box.classList.remove('show');done();},400);}
+  stDiv.innerHTML = STEPS.map((s, i) => `<div class="ps" id="ps-${i}"><div class="pd"></div><span>${s}</span></div>`).join('');
+  let i = 0;
+  function next() {
+    if (i > 0) { const prev = document.getElementById(`ps-${i-1}`); if (prev) { prev.classList.remove('act'); prev.classList.add('done'); } }
+    if (i < STEPS.length) {
+      const cur = document.getElementById(`ps-${i}`); if (cur) cur.classList.add('act');
+      bar.style.width = ((i + 1) / STEPS.length * 90) + '%';
+      i++; setTimeout(next, 500 + Math.random() * 400);
+    } else { bar.style.width = '100%'; setTimeout(() => { box.classList.remove('show'); done(); }, 300); }
   }
   next();
 }
 
+// ── Run Search ───────────────────────────────────────────────────────────────
 async function runSearch() {
-  const btn=document.getElementById('run-btn');
-  btn.disabled=true; btn.textContent='⟳ Searching all platforms…';
-  document.getElementById('results-area').style.display='none';
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('api-banner').classList.remove('hidden');
+    document.getElementById('api-key-input').focus();
+    alert('Please enter your Anthropic API key first (see the yellow box above).\n\nGet it free from: console.anthropic.com');
+    return;
+  }
 
-  const channels=[...document.querySelectorAll('.ch.on')].map(c=>c.dataset.v).join(', ');
-  const payload={
-    business:document.getElementById('s-business').value,
-    country:document.getElementById('s-country').value||'India and worldwide',
-    niche:document.getElementById('s-niche').value,
-    lead_type:document.getElementById('s-leadtype').value,
-    channels,
-    keywords:document.getElementById('s-keywords').value,
-    saved_by:document.getElementById('searcher-name').value||'Team',
-  };
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.textContent = '⟳ Searching…';
+  document.getElementById('results-area').style.display = 'none';
 
-  animateProgress(async()=>{
+  const channels = [...document.querySelectorAll('.ch.on')].map(c => c.dataset.v).join(', ');
+  const business = document.getElementById('s-business').value;
+  const country = document.getElementById('s-country').value || 'India and worldwide';
+  const niche = document.getElementById('s-niche').value;
+  const leadtype = document.getElementById('s-leadtype').value;
+  const keywords = document.getElementById('s-keywords').value;
+
+  const prompt = `You are a professional lead generation expert for two Indian organic businesses:
+1. SILASYA (B2C) — sells 100% organic apparel, toys, home décor directly to customers
+2. SHOUMITRA (B2B) — exports the same products globally to wholesalers, importers, retailers, boutiques, NGOs
+
+Search criteria:
+- Business: ${business}
+- Target region: ${country}
+- Niche: ${niche}
+- Lead type: ${leadtype}
+- Platforms to search: ${channels}
+- Extra: ${keywords || 'none'}
+
+Generate 12 highly specific, realistic leads. Return ONLY a raw JSON array, nothing else — no markdown, no explanation.
+
+Each lead must have these exact fields:
+{
+  "name": "realistic company or person name",
+  "type": "b2c or b2b",
+  "category": "product category",
+  "country": "country",
+  "city": "city",
+  "description": "2-3 sentences about who they are and why relevant",
+  "source": "where found e.g. LinkedIn / Instagram / IndiaMART / Google / Etsy / Alibaba",
+  "website": "realistic full URL",
+  "email": "realistic email",
+  "phone": "phone with country code",
+  "instagram": "@handle",
+  "linkedin": "LinkedIn URL",
+  "facebook": "Facebook URL",
+  "whatsapp": "whatsapp number",
+  "tags": ["tag1","tag2","tag3"],
+  "why_good_lead": "one sentence why valuable",
+  "score": number between 50 and 98,
+  "potential_value": "e.g. Rs.5,000-15,000 or $10,000-50,000"
+}
+
+Rules:
+- Make leads REALISTIC — specific names, real-sounding cities, plausible URLs
+- Mix B2C + B2B if business is 'both'
+- B2B: importers, wholesalers, eco-chains, fair trade orgs
+- B2C: organic buyers, gifting customers, eco-conscious shoppers
+- Higher scores for leads with complete contact info
+- Return exactly 12 leads as a JSON array`;
+
+  animateProgress(async () => {
     try {
-      const r=await fetch(API+'/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const d=await r.json();
-      if(d.error) throw new Error(d.error);
-      currentResults=d.leads.map((l,i)=>({...l,_id:Date.now()+i}));
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 4000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      let raw = data.content?.map(b => b.text || '').join('') || '[]';
+      raw = raw.replace(/```json|```/g, '').trim();
+      const start = raw.indexOf('['), end = raw.lastIndexOf(']');
+      if (start !== -1 && end !== -1) raw = raw.slice(start, end + 1);
+
+      const leads = JSON.parse(raw);
+      current = leads.map((l, i) => ({ ...l, _id: Date.now() + i }));
       showResults();
-    } catch(e){
-      alert('Search failed: '+e.message+'\n\nMake sure your .env file has a valid ANTHROPIC_API_KEY');
+    } catch (e) {
+      let msg = e.message;
+      if (msg.includes('401') || msg.includes('authentication')) msg = 'Invalid API key. Please check your key in the yellow box above.';
+      if (msg.includes('429')) msg = 'Too many requests. Wait a moment and try again.';
+      alert('Search failed: ' + msg);
     }
-    btn.disabled=false; btn.textContent='⚡ Find Leads Now — AI Searching All Platforms';
+    btn.disabled = false; btn.textContent = '⚡ Find Leads Now';
   });
 }
 
-function showResults(){
-  const area=document.getElementById('results-area');
-  area.style.display='block';
-  document.getElementById('found-count').textContent=currentResults.length;
-  document.getElementById('results-meta').textContent=
-    `${currentResults.filter(l=>l.type==='b2c').length} B2C · ${currentResults.filter(l=>l.type==='b2b').length} B2B · ${currentResults.filter(l=>l.score>=80).length} Hot leads`;
-  renderResults(currentResults);
-  area.scrollIntoView({behavior:'smooth',block:'start'});
+// ── Show Results ─────────────────────────────────────────────────────────────
+function showResults() {
+  const area = document.getElementById('results-area');
+  area.style.display = 'block';
+  document.getElementById('found-count').textContent = current.length;
+  document.getElementById('results-meta').textContent =
+    `${current.filter(l => l.type === 'b2c').length} B2C · ${current.filter(l => l.type === 'b2b').length} B2B · ${current.filter(l => l.score >= 80).length} Hot leads`;
+  renderCards(current);
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function filterRes(f,btn){
-  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+function filterLeads(f, btn) {
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  let list=currentResults;
-  if(f==='b2c') list=currentResults.filter(l=>l.type==='b2c');
-  else if(f==='b2b') list=currentResults.filter(l=>l.type==='b2b');
-  else if(f==='hot') list=currentResults.filter(l=>l.score>=80);
-  else if(f==='warm') list=currentResults.filter(l=>l.score>=60&&l.score<80);
-  renderResults(list);
+  let list = current;
+  if (f === 'b2c') list = current.filter(l => l.type === 'b2c');
+  else if (f === 'b2b') list = current.filter(l => l.type === 'b2b');
+  else if (f === 'hot') list = current.filter(l => l.score >= 80);
+  else if (f === 'warm') list = current.filter(l => l.score >= 60 && l.score < 80);
+  renderCards(list);
 }
 
-function renderResults(list){
-  const c=document.getElementById('leads-container');
-  if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>No leads match.</div>';return;}
-  c.innerHTML=list.map(l=>leadCard(l,false)).join('');
-}
-
-function leadCard(l, isSaved){
-  const sc=l.score>=80?'sr-hot':l.score>=60?'sr-warm':'sr-new';
-  const badge=l.type==='b2c'?'<span class="lb lb-b2c">B2C · Silasya</span>':'<span class="lb lb-b2b">B2B · Shumitra</span>';
-  const tags=(l.tags||[]).map(t=>`<span class="ltag">${t}</span>`).join('');
-  const contacts=[];
-  if(l.email) contacts.push(`<div class="ci">✉️ <a href="mailto:${l.email}">${l.email}</a></div>`);
-  if(l.phone) contacts.push(`<div class="ci">📞 ${l.phone}</div>`);
-  if(l.website) contacts.push(`<div class="ci">🌐 <a href="${l.website}" target="_blank">${l.website.replace(/https?:\/\//,'').slice(0,30)}…</a></div>`);
-  const acts=[];
-  if(l.website) acts.push(`<a class="cab cweb" href="${l.website}" target="_blank">🌐 Website</a>`);
-  if(l.phone){const wn=(l.phone||'').replace(/\D/g,'');acts.push(`<a class="cab cwa" href="https://wa.me/${wn}" target="_blank">📲 WhatsApp</a>`);}
-  if(l.instagram) acts.push(`<a class="cab cig" href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`);
-  if(l.facebook) acts.push(`<a class="cab cfb" href="${l.facebook.startsWith('http')?l.facebook:'https://facebook.com/'+l.facebook}" target="_blank">👤 Facebook</a>`);
-  if(l.linkedin) acts.push(`<a class="cab cli" href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank">💼 LinkedIn</a>`);
-  if(l.email) acts.push(`<a class="cab" href="mailto:${l.email}">✉️ Email</a>`);
-  acts.push(`<button class="cab cai" onclick="generateOutreach(${l._id||l.id})">✦ AI Scripts</button>`);
-  acts.push(`<button class="cab csave ${isSaved?'saved':''}" id="sbtn-${l._id||l.id}" onclick="saveSingleLead(${l._id||l.id})">${isSaved?'✓ Saved':'💾 Save'}</button>`);
-  return `<div class="lc">
-    <div class="lc-top">
-      <div style="flex:1;min-width:0">
-        <div class="lc-name">${l.name}</div>
-        <div class="lc-badges">${badge}<span class="ls">📍 ${l.source||'Web'} · ${l.city||l.country||''}</span></div>
-        <div class="lc-desc">${l.description||''}</div>
-        ${(l.why_good||l.why_good_lead)?`<div class="lc-why">✦ ${l.why_good||l.why_good_lead}</div>`:''}
-        ${l.potential_value?`<div class="lc-val">💰 ${l.potential_value}</div>`:''}
-        <div class="lc-tags">${tags}</div>
-        <div class="lc-contact">${contacts.join('')}</div>
+function renderCards(list) {
+  const c = document.getElementById('leads-container');
+  if (!list.length) { c.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>No leads match.</div>'; return; }
+  c.innerHTML = list.map(l => {
+    const isS = stored.some(s => s.name === l.name && s.email === l.email);
+    const sc = l.score >= 80 ? 'sr-hot' : l.score >= 60 ? 'sr-warm' : 'sr-new';
+    const badge = l.type === 'b2c' ? '<span class="lb lb-b2c">B2C · Silasya</span>' : '<span class="lb lb-b2b">B2B · Shoumitra</span>';
+    const tags = (l.tags || []).map(t => `<span class="ltag">${t}</span>`).join('');
+    const contacts = [];
+    if (l.email) contacts.push(`<div class="ci">✉️ <a href="mailto:${l.email}">${l.email}</a></div>`);
+    if (l.phone) contacts.push(`<div class="ci">📞 ${l.phone}</div>`);
+    if (l.website) contacts.push(`<div class="ci">🌐 <a href="${l.website}" target="_blank">${l.website.replace(/https?:\/\//,'').slice(0,34)}…</a></div>`);
+    const acts = [];
+    if (l.website) acts.push(`<a class="cab cweb" href="${l.website}" target="_blank">🌐 Website</a>`);
+    if (l.phone) { const wn = l.phone.replace(/\D/g,''); acts.push(`<a class="cab cwa" href="https://wa.me/${wn}" target="_blank">📲 WhatsApp</a>`); }
+    if (l.instagram) acts.push(`<a class="cab cig" href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`);
+    if (l.facebook) acts.push(`<a class="cab cfb" href="${l.facebook.startsWith('http')?l.facebook:'https://facebook.com/'+l.facebook}" target="_blank">👤 Facebook</a>`);
+    if (l.linkedin) acts.push(`<a class="cab cli" href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank">💼 LinkedIn</a>`);
+    if (l.email) acts.push(`<a class="cab" href="mailto:${l.email}">✉️ Email</a>`);
+    acts.push(`<button class="cab cai" onclick="genOutreach(${l._id})">✦ AI Scripts</button>`);
+    acts.push(`<button class="cab csave ${isS ? 'saved' : ''}" id="sb-${l._id}" onclick="saveSingle(${l._id})">${isS ? '✓ Saved' : '💾 Save'}</button>`);
+    return `<div class="lc">
+      <div class="lc-top">
+        <div style="flex:1;min-width:0">
+          <div class="lc-name">${l.name}</div>
+          <div class="lc-badges">${badge}<span class="lc-src">📍 ${l.source||'Web'} · ${l.city||l.country||''}</span></div>
+          <div class="lc-desc">${l.description||''}</div>
+          ${l.why_good_lead ? `<div class="lc-why">✦ ${l.why_good_lead}</div>` : ''}
+          ${l.potential_value ? `<div class="lc-val">💰 ${l.potential_value}</div>` : ''}
+          <div class="lc-tags">${tags}</div>
+          <div class="lc-contacts">${contacts.join('')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+          <div class="sr ${sc}">${l.score}</div>
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${l.score>=80?'🔥 Hot':l.score>=60?'🌤 Warm':'✦ New'}</div>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-        <div class="sr ${sc}">${l.score}</div>
-        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${l.score>=80?'🔥 Hot':l.score>=60?'🌤 Warm':'✦ New'}</div>
-      </div>
-    </div>
-    <div class="ca">${acts.join('')}</div>
-  </div>`;
+      <div class="ca">${acts.join('')}</div>
+    </div>`;
+  }).join('');
 }
 
-async function saveSingleLead(localId){
-  const l=currentResults.find(x=>(x._id||x.id)===localId);
-  if(!l) return;
-  try {
-    const r=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...l,saved_by:document.getElementById('searcher-name').value||'Team'})});
-    const d=await r.json();
-    if(d.success){
-      const btn=document.getElementById(`sbtn-${localId}`);
-      if(btn){btn.textContent='✓ Saved';btn.classList.add('saved');}
-      loadStats();
-    } else alert('Error: '+d.error);
-  } catch(e){ alert('Save failed: '+e.message); }
+function saveSingle(id) {
+  const l = current.find(x => x._id === id); if (!l) return;
+  if (stored.some(s => s.name === l.name && s.email === l.email)) { alert('Already saved!'); return; }
+  stored.unshift({ ...l, savedAt: new Date().toISOString(), status: l.score>=80?'hot':l.score>=60?'warm':'new' });
+  persist();
+  const btn = document.getElementById(`sb-${id}`);
+  if (btn) { btn.textContent = '✓ Saved'; btn.classList.add('saved'); }
 }
 
-async function saveAllLeads(){
-  try {
-    const r=await fetch(API+'/api/leads/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({leads:currentResults,saved_by:document.getElementById('searcher-name').value||'Team'})});
-    const d=await r.json();
-    if(d.success){
-      alert(`✅ ${d.saved} leads saved to the shared database!`);
-      document.querySelectorAll('.csave').forEach(b=>{b.textContent='✓ Saved';b.classList.add('saved');});
-      loadStats();
-    } else alert('Error: '+d.error);
-  } catch(e){ alert('Save failed: '+e.message); }
+function saveAll() {
+  let added = 0;
+  current.forEach(l => {
+    if (!stored.some(s => s.name === l.name && s.email === l.email)) {
+      stored.unshift({ ...l, savedAt: new Date().toISOString(), status: l.score>=80?'hot':l.score>=60?'warm':'new' });
+      added++;
+    }
+  });
+  persist();
+  alert(`✅ ${added} leads saved to your Lead Bank!`);
+  document.querySelectorAll('.csave').forEach(b => { b.textContent = '✓ Saved'; b.classList.add('saved'); });
 }
 
-function clearResults(){ currentResults=[]; document.getElementById('results-area').style.display='none'; }
+function clearResults() { current = []; document.getElementById('results-area').style.display = 'none'; }
 
-// ── Outreach Modal ────────────────────────────────────────────────────────────
-async function generateOutreach(localId){
-  const l=currentResults.find(x=>(x._id||x.id)===localId);
-  if(!l) return;
-  // Save first if needed to get DB id, or use inline generation
-  document.getElementById('modal-lead-name').textContent='AI Outreach — '+l.name;
-  document.getElementById('modal-body').textContent='Generating personalized scripts for all platforms…';
+// ── AI Outreach ───────────────────────────────────────────────────────────────
+async function genOutreach(id) {
+  const l = current.find(x => x._id === id); if (!l) return;
+  const apiKey = getApiKey();
+  if (!apiKey) { alert('Please enter your API key first.'); return; }
+
+  document.getElementById('modal-title').textContent = l.name;
+  document.getElementById('modal-body').textContent = '⟳ Generating scripts for all platforms…';
   document.getElementById('outreach-modal').classList.add('open');
 
-  try {
-    // Try to save and get DB id
-    const saveR=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...l,saved_by:document.getElementById('searcher-name').value||'Team'})});
-    const saveD=await saveR.json();
-    const dbId=saveD.id;
-    if(dbId){
-      const r=await fetch(API+`/api/outreach/${dbId}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
-      const d=await r.json();
-      document.getElementById('modal-body').textContent=d.outreach||d.error;
-      loadStats();
-    }
-  } catch(e){ document.getElementById('modal-body').textContent='Error: '+e.message; }
-}
+  const isB2C = l.type === 'b2c';
+  const prompt = isB2C
+    ? `Write outreach messages for this B2C lead for SILASYA (100% organic brand — apparel, toys, décor).
+Lead: ${l.name}, ${l.country}, interested in ${l.category}. ${l.description}
 
-function copyOutreach(){
-  navigator.clipboard.writeText(document.getElementById('modal-body').textContent).then(()=>alert('Copied!'));
+Write clearly labeled messages:
+📲 WHATSAPP (warm, personal, max 100 words)
+📸 INSTAGRAM DM (casual, max 70 words)
+👤 FACEBOOK MESSAGE (friendly, max 90 words)
+✉️ EMAIL (subject line + body, max 140 words)
+📅 3 FOLLOW-UP MESSAGES (Day 3, Day 7, Day 14 — each under 50 words)`
+    : `Write outreach for this B2B export lead for SHOUMITRA (Indian organic exporter).
+Lead: ${l.name}, ${l.country}, ${l.category}. ${l.description} Potential: ${l.potential_value||'TBD'}
+
+Write clearly labeled messages:
+✉️ EMAIL (subject + body, professional, max 180 words)
+💼 LINKEDIN INMAIL (formal, max 110 words)
+📲 WHATSAPP BUSINESS (concise, max 80 words)
+📸 INSTAGRAM/FACEBOOK DM (casual, max 70 words)
+📅 FOLLOW-UP (Day 3, Day 7, Day 14 — each under 50 words)
+
+Shoumitra USPs: 100% organic, export-ready, no minimum order, GOTS/OEKO-TEX certifiable.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    document.getElementById('modal-body').textContent = data.content?.map(b => b.text||'').join('') || 'Error generating scripts.';
+  } catch (e) {
+    document.getElementById('modal-body').textContent = 'Error: ' + e.message;
+  }
 }
 
 // ── CRM ───────────────────────────────────────────────────────────────────────
-async function loadCRMLeads(){
-  const search=document.getElementById('crm-search').value;
-  const type=document.getElementById('crm-type').value;
-  const status=document.getElementById('crm-status').value;
-  try {
-    let url=API+'/api/leads?limit=200';
-    if(type) url+=`&type=${type}`;
-    if(status) url+=`&status=${status}`;
-    if(search) url+=`&search=${encodeURIComponent(search)}`;
-    const r=await fetch(url);
-    const d=await r.json();
-    renderCRMTable(d.leads||[]);
-  } catch(e){ console.error(e); }
-}
+function renderCRM() {
+  const search = (document.getElementById('crm-search').value||'').toLowerCase();
+  const filter = document.getElementById('crm-filter').value;
+  let list = stored;
+  if (filter === 'b2c') list = stored.filter(l => l.type === 'b2c');
+  else if (filter === 'b2b') list = stored.filter(l => l.type === 'b2b');
+  else if (filter === 'hot') list = stored.filter(l => l.score >= 80);
+  else if (filter === 'warm') list = stored.filter(l => l.score >= 60 && l.score < 80);
+  if (search) list = list.filter(l => (l.name+l.email+l.country+l.category).toLowerCase().includes(search));
 
-function renderCRMTable(leads){
-  const body=document.getElementById('crm-body');
-  if(!leads.length){
-    body.innerHTML='<tr><td colspan="11"><div class="empty"><div class="empty-icon">📋</div>No leads found.</div></td></tr>';
-    return;
-  }
-  const statusCls={'hot':'sp-hot','warm':'sp-warm','new':'sp-new','contacted':'sp-contacted','converted':'sp-converted'};
-  body.innerHTML=leads.map(l=>{
-    const soc=[];
-    if(l.whatsapp||l.phone){const wn=(l.phone||l.whatsapp||'').replace(/\D/g,'');soc.push(`<a href="https://wa.me/${wn}" target="_blank" style="font-size:14px;text-decoration:none" title="WhatsApp">📲</a>`);}
-    if(l.instagram) soc.push(`<a href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank" style="font-size:14px;text-decoration:none" title="Instagram">📸</a>`);
-    if(l.facebook) soc.push(`<a href="${l.facebook.startsWith('http')?l.facebook:'https://facebook.com/'+l.facebook}" target="_blank" style="font-size:14px;text-decoration:none" title="Facebook">👤</a>`);
-    if(l.linkedin) soc.push(`<a href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank" style="font-size:14px;text-decoration:none" title="LinkedIn">💼</a>`);
-    if(l.email) soc.push(`<a href="mailto:${l.email}" style="font-size:14px;text-decoration:none" title="Email">✉️</a>`);
-    const date=l.created_at?new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'—';
+  const body = document.getElementById('crm-body');
+  if (!list.length) { body.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="empty-icon">📋</div>No leads yet. Find leads and save them!</div></td></tr>`; return; }
+
+  body.innerHTML = list.map((l, idx) => {
+    const sc = l.score>=80?'sp-hot':l.score>=60?'sp-warm':l.status==='contacted'?'sp-contacted':l.status==='converted'?'sp-converted':'sp-new';
+    const soc = [];
+    if(l.phone){const wn=l.phone.replace(/\D/g,'');soc.push(`<a class="soc-ico has" href="https://wa.me/${wn}" target="_blank" title="WhatsApp">📲</a>`);}
+    else soc.push(`<span class="soc-ico" title="No WhatsApp">📲</span>`);
+    if(l.instagram)soc.push(`<a class="soc-ico has" href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank" title="Instagram">📸</a>`);
+    else soc.push(`<span class="soc-ico">📸</span>`);
+    if(l.facebook)soc.push(`<a class="soc-ico has" href="${l.facebook.startsWith('http')?l.facebook:'https://facebook.com/'+l.facebook}" target="_blank" title="Facebook">👤</a>`);
+    else soc.push(`<span class="soc-ico">👤</span>`);
+    if(l.linkedin)soc.push(`<a class="soc-ico has" href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank" title="LinkedIn">💼</a>`);
+    else soc.push(`<span class="soc-ico">💼</span>`);
+    if(l.email)soc.push(`<a class="soc-ico has" href="mailto:${l.email}" title="Email">✉️</a>`);
+    const date = l.savedAt ? new Date(l.savedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : '—';
+    const realIdx = stored.indexOf(l);
     return `<tr>
       <td><span class="lb lb-${l.type}">${l.type.toUpperCase()}</span></td>
       <td><strong>${l.name}</strong></td>
-      <td style="color:var(--muted)">${l.email||'—'}</td>
+      <td style="color:var(--muted);font-size:11px">${l.email||l.phone||'—'}</td>
       <td style="color:var(--muted)">${l.country||'—'}</td>
       <td style="color:var(--muted);font-size:11px">${l.category||'—'}</td>
       <td><strong style="color:${l.score>=80?'var(--accent)':l.score>=60?'var(--gold)':'var(--green)'}">${l.score}</strong></td>
       <td>
-        <select style="padding:3px 7px;font-size:10px;width:100px" onchange="updateStatus(${l.id},this.value)">
-          ${['new','warm','hot','contacted','converted','closed'].map(s=>`<option ${l.status===s?'selected':''} value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+        <select style="padding:3px 7px;font-size:10px;width:105px" onchange="updateStatus(${realIdx},this.value)">
+          ${['new','warm','hot','contacted','converted'].map(s=>`<option ${(l.status||'new')===s?'selected':''} value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
         </select>
       </td>
-      <td><div style="display:flex;gap:6px;align-items:center">${soc.join('')}</div></td>
-      <td style="color:var(--muted);font-size:11px">${l.saved_by||'—'}</td>
-      <td style="color:var(--muted);font-size:11px">${date}</td>
-      <td><button class="btn btn-red" style="padding:4px 9px;font-size:10px" onclick="deleteLead(${l.id})">✕</button></td>
+      <td><div class="soc-row">${soc.join('')}</div></td>
+      <td style="color:var(--muted);font-size:11px">${l.potential_value||'—'}</td>
+      <td><button class="btn btn-outline" style="padding:4px 9px;font-size:10px;color:var(--accent);border-color:rgba(207,76,76,0.3)" onclick="deleteLead(${realIdx})">✕</button></td>
     </tr>`;
   }).join('');
 }
 
-async function updateStatus(id,status){
-  try {
-    await fetch(API+`/api/leads/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-    loadStats();
-  } catch(e){ console.error(e); }
+function updateStatus(idx, status) { stored[idx].status = status; persist(); }
+function deleteLead(idx) { if (!confirm('Remove this lead?')) return; stored.splice(idx, 1); persist(); renderCRM(); }
+function clearAll() { if (!stored.length || !confirm('Clear all saved leads?')) return; stored = []; persist(); renderCRM(); }
+
+function exportCSV() {
+  if (!stored.length) { alert('No leads to export.'); return; }
+  const h = ['Type','Name','Email','Phone','Country','City','Category','Source','Website','Instagram','LinkedIn','Facebook','WhatsApp','Score','Status','Potential Value','Why Good','Date'];
+  const r = stored.map(l => [l.type,l.name,l.email||'',l.phone||'',l.country||'',l.city||'',l.category||'',l.source||'',l.website||'',l.instagram||'',l.linkedin||'',l.facebook||'',l.whatsapp||'',l.score,l.status||'new',l.potential_value||'',l.why_good_lead||'',l.savedAt?new Date(l.savedAt).toLocaleDateString():'']);
+  const csv = [h,...r].map(row => row.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'silasya_shoumitra_leads.csv'; a.click();
 }
 
-async function deleteLead(id){
-  if(!confirm('Remove this lead from database?')) return;
-  try {
-    await fetch(API+`/api/leads/${id}`,{method:'DELETE'});
-    loadCRMLeads(); loadStats();
-  } catch(e){ alert('Delete failed'); }
-}
-
-// ── Team ──────────────────────────────────────────────────────────────────────
-async function loadTeam(){
-  try {
-    const r=await fetch(API+'/api/team');
-    const d=await r.json();
-    const c=document.getElementById('team-list');
-    if(!d.members||!d.members.length){c.innerHTML='<div class="empty">No members yet.</div>';return;}
-    c.innerHTML=d.members.map(m=>`<div class="member-card">
-      <div><div class="mc-name">${m.name}</div><div class="mc-email">${m.email}</div></div>
-      <span class="role-badge">${m.role}</span>
-    </div>`).join('');
-  } catch(e){ console.error(e); }
-}
-
-async function addMember(){
-  const name=document.getElementById('tm-name').value.trim();
-  const email=document.getElementById('tm-email').value.trim();
-  const role=document.getElementById('tm-role').value;
-  if(!name||!email){alert('Name and email required.');return;}
-  try {
-    const r=await fetch(API+'/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,role})});
-    const d=await r.json();
-    if(d.success){document.getElementById('tm-name').value='';document.getElementById('tm-email').value='';loadTeam();}
-    else alert('Error: '+d.error);
-  } catch(e){ alert('Failed: '+e.message); }
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-checkStatus();
-setInterval(loadStats, 30000);
+// ── Init ─────────────────────────────────────────────────────────────────────
+initApiKey();
+updateStats();
 </script>
 </body>
 </html>
