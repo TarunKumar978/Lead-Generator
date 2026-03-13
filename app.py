@@ -1,5 +1,5 @@
 """
-Silasya & Shoumitra — AI Lead Finder
+Silasya & Shumitra — AI Lead Finder
 Flask + MySQL Backend
 """
 
@@ -222,34 +222,6 @@ Return ONLY the JSON array, no other text."""
 
         leads = json.loads(raw)
 
-        # Normalize field names — AI sometimes uses variants like company_name, lead_score, etc.
-        for lead in leads:
-            # name
-            if not lead.get("name"):
-                lead["name"] = (lead.pop("company_name", None)
-                                or lead.pop("contact_name", None)
-                                or lead.pop("business_name", None)
-                                or lead.pop("lead_name", None)
-                                or "Unknown Lead")
-            # type
-            if not lead.get("type"):
-                t = (lead.pop("lead_type", None) or lead.pop("business_type", None) or "b2c")
-                lead["type"] = "b2b" if "b2b" in str(t).lower() else "b2c"
-            else:
-                lead["type"] = "b2b" if "b2b" in str(lead["type"]).lower() else "b2c"
-            # score
-            if lead.get("score") is None:
-                lead["score"] = (lead.pop("lead_score", None)
-                                 or lead.pop("quality_score", None)
-                                 or 50)
-            try:
-                lead["score"] = int(lead["score"])
-            except (ValueError, TypeError):
-                lead["score"] = 50
-            # tags must be a list
-            if not isinstance(lead.get("tags"), list):
-                lead["tags"] = []
-
         # Update search history with count
         conn = get_db()
         cursor = conn.cursor()
@@ -360,66 +332,6 @@ def save_lead():
         conn.close()
 
         return jsonify({"success": True, "id": lead_id, "message": f"Lead '{name}' saved!"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/leads/bulk", methods=["POST"])
-def save_leads_bulk():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-
-        leads = data.get("leads", [])
-        saved_by = data.get("saved_by", "Team")
-        saved = 0
-        errors = []
-
-        conn = get_db()
-        cursor = conn.cursor()
-        for lead in leads:
-            try:
-                name = lead.get("name") or "Unknown Lead"
-                tags = lead.get("tags", [])
-                if isinstance(tags, list):
-                    tags = json.dumps(tags)
-                cursor.execute("""
-                    INSERT INTO leads (name, type, category, country, city, email, phone, website,
-                        instagram, linkedin, facebook, whatsapp, description, why_good,
-                        potential_value, tags, score, status, source, saved_by)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """, (
-                    name,
-                    lead.get("type", "b2c"),
-                    lead.get("category", ""),
-                    lead.get("country", ""),
-                    lead.get("city", ""),
-                    lead.get("email", ""),
-                    lead.get("phone", ""),
-                    lead.get("website", ""),
-                    lead.get("instagram", ""),
-                    lead.get("linkedin", ""),
-                    lead.get("facebook", ""),
-                    lead.get("whatsapp", ""),
-                    lead.get("description", ""),
-                    lead.get("why_good", ""),
-                    lead.get("potential_value", ""),
-                    tags,
-                    int(lead.get("score", 50)),
-                    lead.get("status", "new"),
-                    lead.get("source", "AI Search"),
-                    saved_by,
-                ))
-                saved += 1
-            except Exception as e:
-                errors.append(str(e))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return jsonify({"success": True, "saved": saved, "errors": errors})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -576,6 +488,29 @@ Write a short, friendly, professional {channel} message. Keep it under 150 words
         return jsonify({"error": str(e)}), 500
 
 
+# ─── Global Error Handlers (always return JSON, never HTML) ──────────────────
+
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify({"error": "Bad request", "message": str(e)}), 400
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Endpoint not found", "message": str(e)}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return jsonify({"error": "Method not allowed", "message": str(e)}), 405
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": "Internal server error", "message": str(e)}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({"error": type(e).__name__, "message": str(e)}), 500
+
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -583,7 +518,7 @@ if __name__ == "__main__":
     print("📦 Initializing database...")
     init_db()
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    debug = os.getenv("FLASK_DEBUG", "False").lower() == "true"  # Default OFF — debug=True bypasses error handlers
     print(f"✅ App running at http://localhost:{port}")
     print(f"📋 Share with team: http://YOUR_IP:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
