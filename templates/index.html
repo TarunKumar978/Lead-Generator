@@ -202,7 +202,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
     <div class="panel">
       <div class="panel-title">Find <span>New Leads</span> with AI</div>
-      <div class="panel-sub">AI searches across Google, LinkedIn, Instagram, Facebook, IndiaMART, Alibaba, Etsy, Fab India, trade directories and more — bringing you real, actionable leads for Silasya & Shoumitra</div>
+      <div class="panel-sub">AI searches across Google, LinkedIn, Instagram, Facebook, IndiaMART, Alibaba, Etsy, Fab India, trade directories and more — bringing you real, actionable leads for Silasya & Shumitra</div>
 
       <!-- Who is searching -->
       <div class="user-tag">
@@ -214,9 +214,9 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         <div>
           <label>Business Focus</label>
           <select id="s-business">
-            <option value="both">Both — Silasya (B2C) + Shoumitra (B2B)</option>
+            <option value="both">Both — Silasya (B2C) + Shumitra (B2B)</option>
             <option value="b2c">Silasya only — B2C Customers</option>
-            <option value="b2b">Shoumitra only — B2B Export Buyers</option>
+            <option value="b2b">Shumitra only — B2B Export Buyers</option>
           </select>
         </div>
         <div>
@@ -504,7 +504,7 @@ function renderResults(list){
 
 function leadCard(l, isSaved){
   const sc=l.score>=80?'sr-hot':l.score>=60?'sr-warm':'sr-new';
-  const badge=l.type==='b2c'?'<span class="lb lb-b2c">B2C · Silasya</span>':'<span class="lb lb-b2b">B2B · Shoumitra</span>';
+  const badge=l.type==='b2c'?'<span class="lb lb-b2c">B2C · Silasya</span>':'<span class="lb lb-b2b">B2B · Shumitra</span>';
   const tags=(l.tags||[]).map(t=>`<span class="ltag">${t}</span>`).join('');
   const contacts=[];
   if(l.email) contacts.push(`<div class="ci">✉️ <a href="mailto:${l.email}">${l.email}</a></div>`);
@@ -525,7 +525,7 @@ function leadCard(l, isSaved){
         <div class="lc-name">${l.name}</div>
         <div class="lc-badges">${badge}<span class="ls">📍 ${l.source||'Web'} · ${l.city||l.country||''}</span></div>
         <div class="lc-desc">${l.description||''}</div>
-        ${l.why_good_lead?`<div class="lc-why">✦ ${l.why_good_lead}</div>`:''}
+        ${(l.why_good||l.why_good_lead)?`<div class="lc-why">✦ ${l.why_good||l.why_good_lead}</div>`:''}
         ${l.potential_value?`<div class="lc-val">💰 ${l.potential_value}</div>`:''}
         <div class="lc-tags">${tags}</div>
         <div class="lc-contact">${contacts.join('')}</div>

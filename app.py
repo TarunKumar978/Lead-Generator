@@ -199,7 +199,7 @@ Return ONLY a valid JSON array with exactly 12 leads. Each lead must have these 
 - linkedin (string): LinkedIn URL
 - whatsapp (string): phone number
 - description (string): 1-2 sentence description
-- why_good (string): why this is a good lead for Silasya/Shoumitra
+- why_good (string): why this is a good lead for Silasya/Shumitra
 - potential_value (string): e.g. "High", "Medium", "$5,000-$10,000/month"
 - score (number): 1-100 lead quality score
 - tags (array of strings): relevant tags
@@ -467,7 +467,7 @@ def generate_outreach(lead_id):
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shoumitra (Indian organic brand).
+        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shumitra (Indian organic brand).
 
 Lead: {lead.get('name')}
 Type: {lead.get('type')}
@@ -514,7 +514,7 @@ def handle_exception(e):
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
+    print("🚀 Starting Silasya & Shumitra Lead Finder...")
     print("📦 Initializing database...")
     init_db()
     port = int(os.getenv("PORT", 5000))
