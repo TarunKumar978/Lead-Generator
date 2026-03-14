@@ -488,6 +488,225 @@ Write a short, friendly, professional {channel} message. Keep it under 150 words
         return jsonify({"error": str(e)}), 500
 
 
+
+# ─── Bulk Save Leads ─────────────────────────────────────────────────────────
+
+@app.route("/api/leads/bulk", methods=["POST"])
+def save_leads_bulk():
+    try:
+        data = request.get_json()
+        leads = data.get("leads", [])
+        saved_by = data.get("saved_by", "Team")
+        if not leads:
+            return jsonify({"error": "No leads provided"}), 400
+        conn = get_db()
+        cursor = conn.cursor()
+        saved_ids = []
+        for lead in leads:
+            tags = lead.get("tags", [])
+            if isinstance(tags, list):
+                tags = json.dumps(tags)
+            cursor.execute("""
+                INSERT INTO leads (name, type, category, country, city, email, phone, website,
+                    instagram, linkedin, facebook, whatsapp, description, why_good,
+                    potential_value, tags, score, status, source, saved_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                lead.get("name") or "Unknown Lead",
+                lead.get("type", "b2c"), lead.get("category", ""),
+                lead.get("country", ""), lead.get("city", ""),
+                lead.get("email", ""), lead.get("phone", ""),
+                lead.get("website", ""), lead.get("instagram", ""),
+                lead.get("linkedin", ""), lead.get("facebook", ""),
+                lead.get("whatsapp", ""), lead.get("description", ""),
+                lead.get("why_good", ""), lead.get("potential_value", ""),
+                tags, int(lead.get("score", 50)),
+                lead.get("status", "new"), lead.get("source", "AI Search"), saved_by,
+            ))
+            saved_ids.append(cursor.lastrowid)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "saved": len(saved_ids), "ids": saved_ids})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Export Excel ─────────────────────────────────────────────────────────────
+
+@app.route("/api/export/excel")
+def export_excel():
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        import io
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM leads ORDER BY created_at DESC")
+        leads = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Silasya Leads"
+        headers = ["ID","Name","Type","Category","Country","City","Email","Phone",
+                   "Website","Instagram","LinkedIn","WhatsApp","Score","Status",
+                   "Potential Value","Description","Why Good","Saved By","Created At"]
+        ws.append(headers)
+        gold = PatternFill("solid", fgColor="C9A84C")
+        bold = Font(bold=True, color="000000")
+        for cell in ws[1]:
+            cell.fill = gold
+            cell.font = bold
+            cell.alignment = Alignment(horizontal="center")
+        for lead in leads:
+            ws.append([
+                lead.get("id"), lead.get("name"), lead.get("type"),
+                lead.get("category"), lead.get("country"), lead.get("city"),
+                lead.get("email"), lead.get("phone"), lead.get("website"),
+                lead.get("instagram"), lead.get("linkedin"), lead.get("whatsapp"),
+                lead.get("score"), lead.get("status"), lead.get("potential_value"),
+                lead.get("description"), lead.get("why_good"), lead.get("saved_by"),
+                str(lead.get("created_at", ""))
+            ])
+        for col in ws.columns:
+            max_len = max((len(str(cell.value or "")) for cell in col), default=10)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 50)
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return Response(buf.read(),
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment;filename=silasya_leads.xlsx"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Email Outreach ───────────────────────────────────────────────────────────
+
+@app.route("/api/email/<int:lead_id>", methods=["POST"])
+def generate_email(lead_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM leads WHERE id=%s", (lead_id,))
+        lead = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not lead:
+            return jsonify({"error": "Lead not found"}), 404
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        prompt = f"""Write a professional cold email for Silasya & Shoumitra (Indian organic brand).
+Lead: {lead.get('name')}, {lead.get('category')}, {lead.get('country')}
+Description: {lead.get('description')}
+Write subject line + email body. Under 150 words. Friendly and focused on partnership."""
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514", max_tokens=500,
+            messages=[{"role": "user", "content": prompt}])
+        return jsonify({"success": True, "message": message.content[0].text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Reminders ───────────────────────────────────────────────────────────────
+
+@app.route("/api/reminders", methods=["GET"])
+def get_reminders():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT r.*, l.name as lead_name FROM reminders r
+            LEFT JOIN leads l ON r.lead_id = l.id
+            ORDER BY r.remind_at ASC
+        """)
+        reminders = cursor.fetchall()
+        for r in reminders:
+            if r.get("remind_at"): r["remind_at"] = r["remind_at"].isoformat()
+            if r.get("created_at"): r["created_at"] = r["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "reminders": reminders})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reminders", methods=["POST"])
+def add_reminder():
+    try:
+        data = request.get_json()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO reminders (lead_id, note, remind_at, created_by)
+            VALUES (%s, %s, %s, %s)
+        """, (data.get("lead_id"), data.get("note",""), data.get("remind_at"), data.get("created_by","Team")))
+        conn.commit()
+        rid = cursor.lastrowid
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "id": rid})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reminders/<int:reminder_id>", methods=["DELETE"])
+def delete_reminder(reminder_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM reminders WHERE id=%s", (reminder_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reminders/<int:reminder_id>", methods=["PUT"])
+def update_reminder(reminder_id):
+    try:
+        data = request.get_json()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE reminders SET done=%s WHERE id=%s", (data.get("done", 1), reminder_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Login ────────────────────────────────────────────────────────────────────
+
+TEAM_CREDENTIALS = {
+    os.getenv("LOGIN_USER_1", "silasya"):   os.getenv("LOGIN_PASS_1", "silasya2025"),
+    os.getenv("LOGIN_USER_2", "shoumitra"): os.getenv("LOGIN_PASS_2", "shoumitra2025"),
+    os.getenv("LOGIN_USER_3", "admin"):     os.getenv("LOGIN_PASS_3", "admin2025"),
+}
+
+@app.route("/login", methods=["GET"])
+def login_page():
+    return render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def do_login():
+    data = request.get_json()
+    username = (data.get("username") or "").strip().lower()
+    password = data.get("password") or ""
+    if TEAM_CREDENTIALS.get(username) == password:
+        session["user"] = username
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return jsonify({"success": True})
+
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
