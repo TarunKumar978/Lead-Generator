@@ -184,7 +184,10 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showPage('search',this)">⚡ Find Leads</div>
+  <div class="nav-tab" onclick="showPage('buyers',this)">📦 Buyer RFQs</div>
   <div class="nav-tab" onclick="showPage('crm',this)">📋 Lead Bank</div>
+  <div class="nav-tab" onclick="showPage('reminders',this)">🔔 Reminders</div>
+  <div class="nav-tab" onclick="showPage('competitors',this)">🎯 Competitors</div>
   <div class="nav-tab" onclick="showPage('team',this)">👥 Team</div>
 </div>
 
@@ -277,6 +280,42 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <div class="prog-steps" id="prog-steps"></div>
     </div>
 
+    <!-- Demand Intelligence -->
+    <div id="demand-panel" style="display:none;margin-bottom:22px">
+      <div class="panel" style="border-color:rgba(201,168,76,0.3);background:linear-gradient(135deg,rgba(201,168,76,0.05),rgba(10,10,11,0))">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:20px">📊</span>
+          <div>
+            <div class="panel-title" style="font-size:16px">Market <span>Demand Intelligence</span></div>
+            <div class="panel-sub" style="margin:0">Real-time market insights to help you convert leads</div>
+          </div>
+          <div style="margin-left:auto;text-align:center">
+            <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold)" id="di-score">—</div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Opportunity Score</div>
+          </div>
+        </div>
+        <div id="di-summary" style="font-size:13px;color:#b0aca6;line-height:1.7;margin-bottom:18px;padding:14px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">🔥 Trending Products</div>
+            <div id="di-trending" style="font-size:12px;color:var(--text);line-height:1.8"></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">💰 Market Numbers</div>
+            <div id="di-numbers" style="font-size:12px;color:var(--text);line-height:1.8"></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">😤 Buyer Pain Points</div>
+            <div id="di-pains" style="font-size:12px;color:var(--text);line-height:1.8"></div>
+          </div>
+        </div>
+        <div style="background:rgba(62,207,122,0.05);border:1px solid rgba(62,207,122,0.2);border-radius:10px;padding:14px">
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);margin-bottom:10px;font-weight:700">✦ How to Convert These Leads</div>
+          <div id="di-convert" style="font-size:12px;color:var(--text);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Results -->
     <div id="results-area" style="display:none">
       <div class="results-header">
@@ -323,6 +362,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
           <option value="converted">Converted</option>
         </select>
         <a href="/api/export/csv" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none">⬇ CSV</a>
+        <a href="/api/export/excel" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none;border-color:rgba(62,207,122,0.4);color:var(--green)">📊 Excel</a>
       </div>
     </div>
     <div class="panel" style="padding:0;overflow:hidden">
@@ -360,6 +400,73 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <div id="team-list"><div class="empty"><div class="empty-icon">👥</div>Loading team…</div></div>
   </div>
 
+
+  <!-- ══ BUYER RFQs PAGE ══ -->
+  <div class="page" id="page-buyers">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="panel-title">Buyer <span>Requirements</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Real RFQs from IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub & more</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="rfq-niche" placeholder="e.g. organic cotton t-shirts" style="width:200px;padding:8px 12px;font-size:12px">
+        <input id="rfq-country" placeholder="e.g. Germany, USA, UAE" style="width:150px;padding:8px 12px;font-size:12px">
+        <button class="btn btn-gold" style="padding:8px 18px;font-size:12px" onclick="searchRFQs()">🔍 Find Buyers</button>
+      </div>
+    </div>
+    <div id="rfq-loading" style="display:none" class="prog-box show">
+      <div class="prog-title">🔍 Searching IndiaMART, Alibaba, TradeIndia, Global Sources, EC21…</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" id="rfq-bar" style="width:0%"></div></div>
+    </div>
+    <div id="rfq-container">
+      <div class="empty"><div class="empty-icon">📦</div>Search for buyer requirements above — find companies actively looking to buy your products right now</div>
+    </div>
+  </div>
+
+  <!-- ══ REMINDERS PAGE ══ -->
+  <div class="page" id="page-reminders">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="panel-title">Follow-up <span>Reminders</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Never forget to follow up — set reminders for every lead</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">Add New Reminder</div>
+      <div class="grid3">
+        <div><label>Lead Name / Company</label><input id="rem-lead-id" placeholder="Enter Lead ID from Lead Bank" type="number"></div>
+        <div><label>Remind Me On</label><input id="rem-date" type="datetime-local"></div>
+        <div><label>Note</label><input id="rem-note" placeholder="e.g. Follow up on sample request"></div>
+      </div>
+      <button class="btn btn-gold" onclick="addReminder()" style="margin-top:8px">+ Set Reminder</button>
+    </div>
+    <div id="reminders-container">
+      <div class="empty"><div class="empty-icon">🔔</div>No reminders yet. Add one above.</div>
+    </div>
+  </div>
+
+  <!-- ══ COMPETITORS PAGE ══ -->
+  <div class="page" id="page-competitors">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="panel-title">Competitor <span>Tracker</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">See who else is selling what you sell — find their weaknesses and beat them</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="comp-niche" placeholder="e.g. organic cotton apparel" style="width:200px;padding:8px 12px;font-size:12px">
+        <input id="comp-country" placeholder="e.g. India, Germany" style="width:150px;padding:8px 12px;font-size:12px">
+        <button class="btn btn-gold" style="padding:8px 18px;font-size:12px" onclick="trackCompetitors()">🎯 Find Competitors</button>
+      </div>
+    </div>
+    <div id="comp-loading" style="display:none" class="prog-box show">
+      <div class="prog-title">🎯 Searching Google, Instagram, Alibaba, Amazon for competitors…</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" id="comp-bar" style="width:0%"></div></div>
+    </div>
+    <div id="comp-container">
+      <div class="empty"><div class="empty-icon">🎯</div>Search for competitors above — find their prices, weaknesses and how to beat them</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Outreach Modal -->
@@ -387,6 +494,7 @@ function showPage(id, tab) {
   tab.classList.add('active');
   if (id==='crm') loadCRMLeads();
   if (id==='team') loadTeam();
+  if (id==='reminders') loadReminders();
 }
 
 // ── DB Status ────────────────────────────────────────────────────────────────
@@ -468,12 +576,30 @@ async function runSearch() {
       const d=await r.json();
       if(d.error) throw new Error(d.error);
       currentResults=d.leads.map((l,i)=>({...l,_id:Date.now()+i}));
+      if(d.demand_intelligence) showDemandIntelligence(d.demand_intelligence);
       showResults();
     } catch(e){
       alert('Search failed: '+e.message+'\n\nMake sure your .env file has a valid ANTHROPIC_API_KEY');
     }
     btn.disabled=false; btn.textContent='⚡ Find Leads Now — AI Searching All Platforms';
   });
+}
+
+function showDemandIntelligence(di){
+  const panel=document.getElementById('demand-panel');
+  panel.style.display='block';
+  document.getElementById('di-score').textContent=di.opportunity_score||'—';
+  document.getElementById('di-summary').textContent=di.market_summary||'';
+  document.getElementById('di-trending').innerHTML=(di.trending_products||[]).map(p=>`<div>• ${p}</div>`).join('');
+  document.getElementById('di-numbers').innerHTML=`
+    <div>📦 Avg Order: ${di.avg_order_value||'—'}</div>
+    <div>💵 Price Range: ${di.price_range||'—'}</div>
+    <div>📅 Peak Season: ${di.peak_season||'—'}</div>
+    <div>⚔️ Competition: ${di.competition_level||'—'}</div>
+  `;
+  document.getElementById('di-pains').innerHTML=(di.buyer_pain_points||[]).map(p=>`<div>• ${p}</div>`).join('');
+  document.getElementById('di-convert').innerHTML=(di.how_to_convert||[]).map((t,i)=>`<div style="margin-bottom:4px"><span style="color:var(--gold);font-weight:700">${i+1}.</span> ${t}</div>`).join('');
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function showResults(){
@@ -519,6 +645,8 @@ function leadCard(l, isSaved){
   if(l.linkedin) acts.push(`<a class="cab cli" href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank">💼 LinkedIn</a>`);
   if(l.email) acts.push(`<a class="cab" href="mailto:${l.email}">✉️ Email</a>`);
   acts.push(`<button class="cab cai" onclick="generateOutreach(${l._id||l.id})">✦ AI Scripts</button>`);
+  acts.push(`<button class="cab" style="border-color:rgba(37,211,102,0.3);color:var(--wa)" onclick="openEmailWriter(${l._id||l.id})">✉️ Email Writer</button>`);
+  acts.push(`<button class="cab" style="border-color:rgba(201,168,76,0.3);color:var(--gold)" onclick="openReminderModal(${l._id||l.id},'${l.name||''}')">🔔 Remind Me</button>`);
   acts.push(`<button class="cab csave ${isSaved?'saved':''}" id="sbtn-${l._id||l.id}" onclick="saveSingleLead(${l._id||l.id})">${isSaved?'✓ Saved':'💾 Save'}</button>`);
   return `<div class="lc">
     <div class="lc-top">
@@ -688,9 +816,339 @@ async function addMember(){
   } catch(e){ alert('Failed: '+e.message); }
 }
 
+
+// ── Buyer RFQs ────────────────────────────────────────────────────────────────
+async function searchRFQs(){
+  const niche=document.getElementById('rfq-niche').value||'organic products';
+  const country=document.getElementById('rfq-country').value||'worldwide';
+  const loading=document.getElementById('rfq-loading');
+  const bar=document.getElementById('rfq-bar');
+  loading.style.display='block';
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+3,90);bar.style.width=p+'%';},400);
+  try{
+    const r=await fetch(API+'/api/buyer-requirements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
+    const d=await r.json();
+    clearInterval(iv); bar.style.width='100%';
+    setTimeout(()=>{loading.style.display='none';},400);
+    if(d.error) throw new Error(d.error);
+    renderRFQs(d.requirements||[]);
+  }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
+}
+
+function renderRFQs(list){
+  const c=document.getElementById('rfq-container');
+  if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">📦</div>No requirements found. Try different keywords.</div>';return;}
+  c.innerHTML=list.map(r=>{
+    const sc=r.match_score>=80?'sr-hot':r.match_score>=60?'sr-warm':'sr-new';
+    return `<div class="lc" style="border-color:${r.match_score>=80?'rgba(207,76,76,0.3)':r.match_score>=60?'rgba(201,168,76,0.3)':'var(--border)'}">
+      <div class="lc-top">
+        <div style="flex:1">
+          <div class="lc-name">${r.buyer_name||'Unknown Buyer'}</div>
+          <div class="lc-badges">
+            <span class="lb lb-b2b">${r.platform||'Trade Portal'}</span>
+            <span class="ls">📍 ${r.country||''}${r.city?', '+r.city:''} · Posted: ${r.posted||'Recently'}</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--gold);margin:8px 0">📦 ${r.requirement||''}</div>
+          <div class="lc-contact">
+            ${r.quantity?`<div class="ci">📏 Qty: <strong>${r.quantity}</strong></div>`:''}
+            ${r.budget?`<div class="ci">💰 Budget: <strong>${r.budget}</strong></div>`:''}
+            ${r.timeline?`<div class="ci">⏰ Timeline: <strong>${r.timeline}</strong></div>`:''}
+            ${r.contact?`<div class="ci">📞 ${r.contact}</div>`:''}
+          </div>
+          ${r.notes?`<div class="lc-desc">${r.notes}</div>`:''}
+          ${r.demand_signals?`<div class="lc-why">✦ ${r.demand_signals}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+          <div class="sr ${sc}">${r.match_score||'—'}</div>
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Match</div>
+        </div>
+      </div>
+      <div class="ca">
+        ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
+        ${r.contact&&r.contact.includes('@')?`<a class="cab" href="mailto:${r.contact}">✉️ Email</a>`:''}
+        ${r.contact?`<a class="cab cwa" href="https://wa.me/${r.contact.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Email Writer ──────────────────────────────────────────────────────────────
+async function openEmailWriter(localId){
+  const l=currentResults.find(x=>(x._id||x.id)===localId);
+  if(!l){alert('Save this lead first then use Email Writer from Lead Bank.');return;}
+  document.getElementById('email-modal').classList.add('open');
+  document.getElementById('email-modal-title').textContent='✉️ Email Writer — '+l.name;
+  ['em-subject','em-short','em-medium','em-detailed','em-whatsapp','em-followup'].forEach(id=>{
+    document.getElementById(id).textContent='Generating…';
+  });
+  try{
+    // Save first to get DB id
+    const saveR=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...l,saved_by:document.getElementById('searcher-name').value||'Team'})});
+    const saveD=await saveR.json();
+    const dbId=saveD.id;
+    if(!dbId) throw new Error('Could not save lead');
+    const r=await fetch(API+`/api/email/${dbId}`,{method:'POST',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    document.getElementById('em-subject').textContent=d.subject||'';
+    document.getElementById('em-short').textContent=d.short||'';
+    document.getElementById('em-medium').textContent=d.medium||'';
+    document.getElementById('em-detailed').textContent=d.detailed||'';
+    document.getElementById('em-whatsapp').textContent=d.whatsapp||'';
+    document.getElementById('em-followup').textContent=d.follow_up||'';
+    loadStats();
+  }catch(e){
+    document.getElementById('em-short').textContent='Error: '+e.message;
+  }
+}
+
+async function openEmailWriterById(dbId, name){
+  document.getElementById('email-modal').classList.add('open');
+  document.getElementById('email-modal-title').textContent='✉️ Email Writer — '+name;
+  ['em-subject','em-short','em-medium','em-detailed','em-whatsapp','em-followup'].forEach(id=>{
+    document.getElementById(id).textContent='Generating…';
+  });
+  try{
+    const r=await fetch(API+`/api/email/${dbId}`,{method:'POST',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    document.getElementById('em-subject').textContent=d.subject||'';
+    document.getElementById('em-short').textContent=d.short||'';
+    document.getElementById('em-medium').textContent=d.medium||'';
+    document.getElementById('em-detailed').textContent=d.detailed||'';
+    document.getElementById('em-whatsapp').textContent=d.whatsapp||'';
+    document.getElementById('em-followup').textContent=d.follow_up||'';
+  }catch(e){
+    document.getElementById('em-short').textContent='Error: '+e.message;
+  }
+}
+
+function copyText(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
+    const el=document.getElementById(id).nextElementSibling;
+    if(el){const orig=el.textContent;el.textContent='✓ Copied!';setTimeout(()=>el.textContent=orig,1500);}
+  });
+}
+
+// ── Reminders ─────────────────────────────────────────────────────────────────
+function openReminderModal(localId, name){
+  document.getElementById('reminder-modal').classList.add('open');
+  document.getElementById('reminder-lead-name').textContent='For: '+name;
+  document.getElementById('reminder-lead-id').value=localId;
+  // Set default to tomorrow
+  const tom=new Date(); tom.setDate(tom.getDate()+1); tom.setHours(9,0,0,0);
+  document.getElementById('modal-rem-date').value=tom.toISOString().slice(0,16);
+}
+
+async function saveReminder(){
+  const localId=parseInt(document.getElementById('reminder-lead-id').value);
+  const note=document.getElementById('modal-rem-note').value;
+  const date=document.getElementById('modal-rem-date').value;
+  if(!date){alert('Please select a date.');return;}
+  // Find lead, save to DB first
+  const l=currentResults.find(x=>(x._id||x.id)===localId);
+  try{
+    let dbId=null;
+    if(l){
+      const saveR=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...l,saved_by:'Team'})});
+      const saveD=await saveR.json();
+      dbId=saveD.id;
+    } else {
+      dbId=localId;
+    }
+    const r=await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:dbId,note,remind_at:date,created_by:'Team'})});
+    const d=await r.json();
+    if(d.success){
+      document.getElementById('reminder-modal').classList.remove('open');
+      document.getElementById('modal-rem-note').value='';
+      alert('✅ Reminder set!');
+    } else alert('Error: '+d.error);
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+async function addReminder(){
+  const leadId=document.getElementById('rem-lead-id').value;
+  const note=document.getElementById('rem-note').value;
+  const date=document.getElementById('rem-date').value;
+  if(!leadId||!date){alert('Lead ID and date are required.');return;}
+  try{
+    const r=await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:parseInt(leadId),note,remind_at:date,created_by:'Team'})});
+    const d=await r.json();
+    if(d.success){document.getElementById('rem-note').value='';loadReminders();alert('✅ Reminder set!');}
+    else alert('Error: '+d.error);
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+async function loadReminders(){
+  try{
+    const r=await fetch(API+'/api/reminders');
+    const d=await r.json();
+    renderReminders(d.reminders||[]);
+  }catch(e){console.error(e);}
+}
+
+function renderReminders(list){
+  const c=document.getElementById('reminders-container');
+  if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">🔔</div>No reminders. Add one above.</div>';return;}
+  const now=new Date();
+  c.innerHTML=list.map(r=>{
+    const dt=new Date(r.remind_at);
+    const overdue=dt<now;
+    const today=dt.toDateString()===now.toDateString();
+    return `<div class="lc" style="border-color:${overdue?'rgba(207,76,76,0.4)':today?'rgba(201,168,76,0.4)':'var(--border)'}">
+      <div class="lc-top">
+        <div style="flex:1">
+          <div class="lc-name">${r.lead_name||'Lead #'+r.lead_id}</div>
+          <div class="lc-badges">
+            <span class="lb ${overdue?'lb-b2c':'lb-b2b'}">${overdue?'⚠️ OVERDUE':today?'📅 TODAY':'🔔 Upcoming'}</span>
+            <span class="ls">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at ${dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="lc-desc">${r.note||'Follow up with this lead'}</div>
+          ${r.lead_email?`<div class="ci" style="margin-top:4px">✉️ ${r.lead_email}</div>`:''}
+        </div>
+      </div>
+      <div class="ca">
+        <button class="btn btn-red" style="padding:6px 12px;font-size:11px" onclick="deleteReminder(${r.id})">✓ Done</button>
+        ${r.lead_email?`<a class="cab" href="mailto:${r.lead_email}">✉️ Email Now</a>`:''}
+        <button class="cab" onclick="openEmailWriterById(${r.lead_id},'${r.lead_name||''}')">✦ Write Email</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteReminder(id){
+  await fetch(API+`/api/reminders/${id}`,{method:'DELETE'});
+  loadReminders();
+}
+
+// ── Competitor Tracker ────────────────────────────────────────────────────────
+async function trackCompetitors(){
+  const niche=document.getElementById('comp-niche').value||'organic apparel';
+  const country=document.getElementById('comp-country').value||'India';
+  const loading=document.getElementById('comp-loading');
+  const bar=document.getElementById('comp-bar');
+  loading.style.display='block';
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);bar.style.width=p+'%';},500);
+  try{
+    const r=await fetch(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
+    const d=await r.json();
+    clearInterval(iv); bar.style.width='100%';
+    setTimeout(()=>{loading.style.display='none';},400);
+    if(d.error) throw new Error(d.error);
+    renderCompetitors(d.competitors||[]);
+  }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
+}
+
+function renderCompetitors(list){
+  const c=document.getElementById('comp-container');
+  if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">🎯</div>No competitors found.</div>';return;}
+  c.innerHTML=list.map(comp=>{
+    const threat=comp.threat_level||'Medium';
+    const tc=threat==='High'?'var(--accent)':threat==='Medium'?'var(--gold)':'var(--green)';
+    return `<div class="lc">
+      <div class="lc-top">
+        <div style="flex:1">
+          <div class="lc-name">${comp.name||'Unknown'}</div>
+          <div class="lc-badges">
+            <span class="ls">📍 ${comp.country||''}</span>
+            ${comp.website?`<a class="ls" href="${comp.website}" target="_blank" style="color:var(--purple);text-decoration:none">🌐 Website</a>`:''}
+            ${comp.instagram?`<a class="ls" href="https://instagram.com/${comp.instagram.replace('@','')}" target="_blank" style="color:var(--ig);text-decoration:none">📸 ${comp.instagram}</a>`:''}
+          </div>
+          <div class="lc-desc">${comp.products||''}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div style="background:rgba(62,207,122,0.05);border:1px solid rgba(62,207,122,0.2);border-radius:8px;padding:10px">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);font-weight:700;margin-bottom:5px">Their Weakness = Your Opportunity</div>
+              <div style="font-size:12px">${comp.weaknesses||'—'}</div>
+            </div>
+            <div style="background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:10px">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:700;margin-bottom:5px">How to Beat Them</div>
+              <div style="font-size:12px">${comp.opportunity||'—'}</div>
+            </div>
+          </div>
+          <div class="lc-contact" style="margin-top:10px">
+            ${comp.price_range?`<div class="ci">💰 Price: ${comp.price_range}</div>`:''}
+            ${comp.target_market?`<div class="ci">🎯 Target: ${comp.target_market}</div>`:''}
+            ${comp.monthly_revenue?`<div class="ci">📈 Revenue: ${comp.monthly_revenue}</div>`:''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-left:12px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Threat</div>
+          <div style="font-size:14px;font-weight:700;color:${tc};border:2px solid ${tc};border-radius:8px;padding:4px 10px">${threat}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 checkStatus();
 setInterval(loadStats, 30000);
 </script>
+
+<!-- Email Writer Modal -->
+<div class="modal-bg" id="email-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-title" id="email-modal-title">✉️ AI Email Writer</div>
+    <div class="modal-sub">3 versions — pick what fits best</div>
+    <div id="email-modal-body">
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700">📧 Subject Line</div>
+        <div id="em-subject" class="modal-body" style="margin-bottom:0;padding:10px 14px;font-size:13px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700">⚡ Short (50 words)</div>
+          <div id="em-short" class="modal-body" style="margin-bottom:0;font-size:12px;min-height:80px"></div>
+          <button class="btn btn-outline" style="width:100%;padding:6px;font-size:11px;margin-top:6px" onclick="copyText('em-short')">Copy</button>
+        </div>
+        <div>
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700">📝 Medium (100 words)</div>
+          <div id="em-medium" class="modal-body" style="margin-bottom:0;font-size:12px;min-height:80px"></div>
+          <button class="btn btn-outline" style="width:100%;padding:6px;font-size:11px;margin-top:6px" onclick="copyText('em-medium')">Copy</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700">📋 Detailed (200 words)</div>
+        <div id="em-detailed" class="modal-body" style="margin-bottom:0;font-size:12px"></div>
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:11px;margin-top:6px" onclick="copyText('em-detailed')">Copy</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--wa);margin-bottom:6px;font-weight:700">📲 WhatsApp Message</div>
+          <div id="em-whatsapp" class="modal-body" style="margin-bottom:0;font-size:12px;border-color:rgba(37,211,102,0.3)"></div>
+          <button class="btn btn-outline" style="width:100%;padding:6px;font-size:11px;margin-top:6px" onclick="copyText('em-whatsapp')">Copy</button>
+        </div>
+        <div>
+          <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:700">🔁 Follow-up (3 days later)</div>
+          <div id="em-followup" class="modal-body" style="margin-bottom:0;font-size:12px;border-color:rgba(201,168,76,0.3)"></div>
+          <button class="btn btn-outline" style="width:100%;padding:6px;font-size:11px;margin-top:6px" onclick="copyText('em-followup')">Copy</button>
+        </div>
+      </div>
+    </div>
+    <button class="modal-close-btn" onclick="document.getElementById('email-modal').classList.remove('open')">✕ Close</button>
+  </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal-bg" id="reminder-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">🔔 Set Follow-up Reminder</div>
+    <div class="modal-sub" id="reminder-lead-name">For this lead</div>
+    <input type="hidden" id="reminder-lead-id">
+    <div style="margin-bottom:14px">
+      <label>Reminder Date & Time</label>
+      <input type="datetime-local" id="modal-rem-date" style="margin-top:6px">
+    </div>
+    <div style="margin-bottom:14px">
+      <label>Note (what to say / ask)</label>
+      <textarea id="modal-rem-note" placeholder="e.g. Follow up on sample request, ask about MOQ decision..." style="margin-top:6px;min-height:80px"></textarea>
+    </div>
+    <button class="btn btn-gold" style="width:100%" onclick="saveReminder()">🔔 Set Reminder</button>
+    <button class="modal-close-btn" onclick="document.getElementById('reminder-modal').classList.remove('open')">✕ Cancel</button>
+  </div>
+</div>
+
 </body>
 </html>
