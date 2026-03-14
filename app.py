@@ -119,38 +119,6 @@ def init_db():
     print("✅ Database initialized successfully")
 
 
-# ─── Login ───────────────────────────────────────────────────────────────────
-
-# Simple credential store — set these in your .env file
-TEAM_CREDENTIALS = {
-    os.getenv("LOGIN_USER_1", "silasya"):  os.getenv("LOGIN_PASS_1", "silasya2025"),
-    os.getenv("LOGIN_USER_2", "shoumitra"): os.getenv("LOGIN_PASS_2", "shoumitra2025"),
-    os.getenv("LOGIN_USER_3", "admin"):     os.getenv("LOGIN_PASS_3", "admin2025"),
-}
-
-
-@app.route("/login", methods=["GET"])
-def login_page():
-    return render_template("login.html")
-
-
-@app.route("/login", methods=["POST"])
-def do_login():
-    data = request.get_json()
-    username = (data.get("username") or "").strip().lower()
-    password = data.get("password") or ""
-    if TEAM_CREDENTIALS.get(username) == password:
-        session["user"] = username
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 401
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return jsonify({"success": True})
-
-
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -204,11 +172,7 @@ def ai_search():
         cursor.close()
         conn.close()
 
-        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-        if not api_key or not api_key.startswith("sk-ant-"):
-            return jsonify({"error": "ANTHROPIC_API_KEY is missing or invalid in your environment variables. Please add it in your Railway dashboard under Variables."}), 500
-
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
         prompt = f"""You are a lead generation expert for two Indian organic businesses:
 - SILASYA: B2C organic apparel, toys, home decor brand
@@ -447,67 +411,6 @@ def export_csv():
         return jsonify({"error": str(e)}), 500
 
 
-# ─── Export Excel ────────────────────────────────────────────────────────────
-
-@app.route("/api/export/excel")
-def export_excel():
-    try:
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
-        import io
-
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM leads ORDER BY created_at DESC")
-        leads = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Silasya Leads"
-
-        headers = ["ID", "Name", "Type", "Category", "Country", "City", "Email",
-                   "Phone", "Website", "Instagram", "LinkedIn", "WhatsApp",
-                   "Score", "Status", "Potential Value", "Description", "Why Good",
-                   "Saved By", "Created At"]
-        ws.append(headers)
-
-        gold = PatternFill("solid", fgColor="C9A84C")
-        bold = Font(bold=True, color="000000")
-        for cell in ws[1]:
-            cell.fill = gold
-            cell.font = bold
-            cell.alignment = Alignment(horizontal="center")
-
-        for lead in leads:
-            ws.append([
-                lead.get("id"), lead.get("name"), lead.get("type"),
-                lead.get("category"), lead.get("country"), lead.get("city"),
-                lead.get("email"), lead.get("phone"), lead.get("website"),
-                lead.get("instagram"), lead.get("linkedin"), lead.get("whatsapp"),
-                lead.get("score"), lead.get("status"), lead.get("potential_value"),
-                lead.get("description"), lead.get("why_good"), lead.get("saved_by"),
-                str(lead.get("created_at", ""))
-            ])
-
-        for col in ws.columns:
-            max_len = max((len(str(cell.value or "")) for cell in col), default=10)
-            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 50)
-
-        buf = io.BytesIO()
-        wb.save(buf)
-        buf.seek(0)
-
-        return Response(
-            buf.read(),
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": "attachment;filename=silasya_leads.xlsx"}
-        )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 # ─── Team ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/team", methods=["GET"])
@@ -562,11 +465,7 @@ def generate_outreach(lead_id):
         if not lead:
             return jsonify({"error": "Lead not found"}), 404
 
-        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-        if not api_key or not api_key.startswith("sk-ant-"):
-            return jsonify({"error": "ANTHROPIC_API_KEY is missing or invalid. Please add it in your Railway dashboard."}), 500
-
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
         prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shoumitra (Indian organic brand).
 
