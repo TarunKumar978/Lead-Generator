@@ -718,3 +718,93 @@ if __name__ == "__main__":
     print(f"✅ App running at http://localhost:{port}")
     print(f"📋 Share with team: http://YOUR_IP:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
+
+
+# ─── Buyer Requirements ───────────────────────────────────────────────────────
+
+@app.route("/api/buyer-requirements", methods=["POST"])
+def buyer_requirements():
+    try:
+        data = request.get_json()
+        niche = data.get("niche", "organic products")
+        country = data.get("country", "worldwide")
+
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        prompt = f"""You are a B2B sourcing expert. Generate 10 realistic buyer requirements/RFQs for:
+Product Niche: {niche}
+Target Country: {country}
+
+Return ONLY a valid JSON array with 10 items. Each item must have:
+- company (string): buyer company name
+- country (string)
+- city (string)
+- requirement (string): what they are looking for
+- quantity (string): e.g. "500 units/month"
+- budget (string): e.g. "$5,000-$10,000"
+- contact_email (string): realistic email
+- platform (string): where RFQ was posted e.g. "IndiaMART", "Alibaba", "TradeIndia"
+- urgency (string): "High", "Medium", or "Low"
+- posted_date (string): recent date
+
+Return ONLY the JSON array, no other text."""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = message.content[0].text.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.find("[")
+        end = raw.rfind("]")
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
+        results = json.loads(raw)
+        return jsonify({"success": True, "results": results, "count": len(results)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Competitor Tracker ───────────────────────────────────────────────────────
+
+@app.route("/api/competitors", methods=["POST"])
+def find_competitors():
+    try:
+        data = request.get_json()
+        niche = data.get("niche", "organic products")
+        country = data.get("country", "India")
+
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand in:
+Product Niche: {niche}
+Country: {country}
+
+Return ONLY a valid JSON array with 10 items. Each item must have:
+- name (string): competitor brand name
+- country (string)
+- website (string): realistic URL
+- instagram (string): @handle
+- price_range (string): e.g. "₹500-₹2000" or "$10-$50"
+- strengths (string): 1 sentence
+- weaknesses (string): 1 sentence
+- how_to_beat (string): 1 sentence strategy
+- market_share (string): "High", "Medium", or "Low"
+- platform (string): where they are strongest e.g. "Instagram", "Amazon", "Alibaba"
+
+Return ONLY the JSON array, no other text."""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = message.content[0].text.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.find("[")
+        end = raw.rfind("]")
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
+        results = json.loads(raw)
+        return jsonify({"success": True, "results": results, "count": len(results)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
