@@ -433,8 +433,15 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     </div>
     <div class="panel" style="margin-bottom:20px">
       <div style="font-size:13px;font-weight:700;margin-bottom:14px">Add New Reminder</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">💡 Tip: Use the 🔔 Remind Me button on any lead card to set a reminder easily. Or search a saved lead below.</div>
       <div class="grid3">
-        <div><label>Lead Name / Company</label><input id="rem-lead-id" placeholder="Enter Lead ID from Lead Bank" type="number"></div>
+        <div>
+          <label>Search Saved Lead</label>
+          <input id="rem-lead-search" placeholder="Type lead name to search..." oninput="searchLeadForReminder()">
+          <div id="rem-lead-results" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:150px;overflow-y:auto"></div>
+          <input type="hidden" id="rem-lead-id">
+          <div id="rem-selected-lead" style="font-size:11px;color:var(--green);margin-top:4px"></div>
+        </div>
         <div><label>Remind Me On</label><input id="rem-date" type="datetime-local"></div>
         <div><label>Note</label><input id="rem-note" placeholder="e.g. Follow up on sample request"></div>
       </div>
@@ -572,7 +579,7 @@ async function runSearch() {
 
   animateProgress(async()=>{
     try {
-      const r=await fetch(API+'/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const r=await fetchWithTimeout(API+'/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const d=await r.json();
       if(d.error) throw new Error(d.error);
       currentResults=d.leads.map((l,i)=>({...l,_id:Date.now()+i}));
@@ -673,6 +680,7 @@ async function saveSingleLead(localId){
   if(!l) return;
   try {
     const r=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...l,saved_by:document.getElementById('searcher-name').value||'Team'})});
+    if(r.status===401){alert('Session expired. Please log in again.');window.location.href='/login';return;}
     const d=await r.json();
     if(d.success){
       const btn=document.getElementById(`sbtn-${localId}`);
@@ -826,7 +834,7 @@ async function searchRFQs(){
   loading.style.display='block';
   let p=0; const iv=setInterval(()=>{p=Math.min(p+3,90);bar.style.width=p+'%';},400);
   try{
-    const r=await fetch(API+'/api/buyer-requirements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
+    const r=await fetchWithTimeout(API+'/api/buyer-requirements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
     const d=await r.json();
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
@@ -1030,7 +1038,7 @@ async function trackCompetitors(){
   loading.style.display='block';
   let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);bar.style.width=p+'%';},500);
   try{
-    const r=await fetch(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
+    const r=await fetchWithTimeout(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country})});
     const d=await r.json();
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
@@ -1081,6 +1089,44 @@ function renderCompetitors(list){
 }
 
 
+
+async function searchLeadForReminder(){
+  const q=document.getElementById('rem-lead-search').value.trim();
+  if(q.length<2){document.getElementById('rem-lead-results').style.display='none';return;}
+  try{
+    const r=await fetch(API+`/api/leads?search=${encodeURIComponent(q)}`);
+    const d=await r.json();
+    const results=document.getElementById('rem-lead-results');
+    if(!d.leads||!d.leads.length){results.style.display='none';return;}
+    results.style.display='block';
+    results.innerHTML=d.leads.slice(0,5).map(l=>`
+      <div onclick="selectLeadForReminder(${l.id},'${l.name}')" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
+        <strong>${l.name}</strong> <span style="color:var(--muted);font-size:10px">${l.country||''} · ${l.category||''}</span>
+      </div>`).join('');
+  }catch(e){console.error(e);}
+}
+
+function selectLeadForReminder(id, name){
+  document.getElementById('rem-lead-id').value=id;
+  document.getElementById('rem-lead-search').value=name;
+  document.getElementById('rem-lead-results').style.display='none';
+  document.getElementById('rem-selected-lead').textContent='✓ Selected: '+name;
+}
+
+// ── Fetch with timeout ───────────────────────────────────────────────────────
+async function fetchWithTimeout(url, options={}, timeout=115000){
+  const controller=new AbortController();
+  const id=setTimeout(()=>controller.abort(),timeout);
+  try{
+    const r=await fetch(url,{...options,signal:controller.signal});
+    clearTimeout(id);
+    return r;
+  }catch(e){
+    clearTimeout(id);
+    if(e.name==='AbortError') throw new Error('Request timed out. The search is taking too long — try a more specific keyword.');
+    throw e;
+  }
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 checkStatus();
