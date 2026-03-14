@@ -1,5 +1,5 @@
 """
-Silasya & Shumitra — AI Lead Finder
+Silasya & Shoumitra — AI Lead Finder
 Flask + MySQL Backend
 """
 
@@ -110,17 +110,7 @@ def init_db():
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS reminders (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            lead_id INT NOT NULL,
-            note TEXT,
-            remind_at DATETIME NOT NULL,
-            done TINYINT DEFAULT 0,
-            created_by VARCHAR(100),
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
+    cursor.execute("SELECT COUNT(*) FROM team_members")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO team_members (name, email, role) VALUES ('Admin', 'admin@silasya.com', 'admin')")
     conn.commit()
@@ -129,49 +119,14 @@ def init_db():
     print("✅ Database initialized successfully")
 
 
-# ─── Auth ────────────────────────────────────────────────────────────────────
-
-APP_USERNAME = os.getenv("APP_USERNAME", "silasya")
-APP_PASSWORD = os.getenv("APP_PASSWORD", "silasya2025")
-
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get("logged_in"):
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "Unauthorized"}), 401
-            return render_template("login.html")
-        return f(*args, **kwargs)
-    return decorated
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        data = request.get_json(silent=True) or request.form
-        if data.get("username") == APP_USERNAME and data.get("password") == APP_PASSWORD:
-            session["logged_in"] = True
-            session["user"] = data.get("username")
-            return jsonify({"success": True})
-        return jsonify({"error": "Wrong username or password"}), 401
-    return render_template("login.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return render_template("login.html")
-
-
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/")
-@login_required
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/status")
-@login_required
 def status():
     try:
         conn = get_db()
@@ -188,7 +143,6 @@ def status():
 # ─── AI Search ───────────────────────────────────────────────────────────────
 
 @app.route("/api/search", methods=["POST"])
-@login_required
 def ai_search():
     try:
         data = request.get_json()
@@ -222,96 +176,53 @@ def ai_search():
 
         prompt = f"""You are a lead generation expert for two Indian organic businesses:
 - SILASYA: B2C organic apparel, toys, home decor brand
-- SHUMITRA: B2B export arm selling organic products worldwide
+- SHOUMITRA: B2B export arm selling organic products worldwide
 
-Use web search to find REAL businesses, stores, importers and buyers actively looking for organic products.
-Search Google, LinkedIn, Instagram, IndiaMART, Alibaba, Etsy and trade directories.
-
-Search parameters:
+Generate 12 realistic, detailed leads based on these parameters:
 Business Focus: {business}
 Target Country/Region: {country}
 Product Niche: {niche}
 Lead Type: {lead_type}
-Channels: {channels}
-Keywords: {keywords}
+Search Channels: {channels}
+Extra Keywords: {keywords}
 
-Return ONLY a valid JSON object with this exact structure:
-{{
-  "leads": [
-    {{
-      "name": "Real company or person name found online",
-      "type": "b2c or b2b",
-      "category": "e.g. Organic Retailer, Wholesale Importer",
-      "country": "country",
-      "city": "city",
-      "email": "real email if found",
-      "phone": "real phone if found",
-      "website": "real website URL",
-      "instagram": "@real handle if found",
-      "linkedin": "real LinkedIn URL if found",
-      "whatsapp": "phone number",
-      "description": "What this business does based on what you found online",
-      "why_good": "Why they are a good lead for Silasya/Shumitra",
-      "potential_value": "Estimated order value e.g. $2,000-$5,000/month",
-      "score": 85,
-      "tags": ["tag1", "tag2"],
-      "source": "Where you found them e.g. IndiaMART, Instagram, Google",
-      "verified": true,
-      "demand_signals": "What products they are actively buying or searching for"
-    }}
-  ],
-  "demand_intelligence": {{
-    "market_summary": "2-3 sentences on current market demand for {niche} in {country}",
-    "trending_products": ["product1", "product2", "product3"],
-    "avg_order_value": "Typical order size in this market",
-    "best_channels": ["channel1", "channel2"],
-    "peak_season": "When demand is highest e.g. Oct-Dec",
-    "buyer_pain_points": ["pain1", "pain2", "pain3"],
-    "price_range": "Typical price buyers pay",
-    "competition_level": "Low / Medium / High",
-    "opportunity_score": 85,
-    "how_to_convert": ["tip1", "tip2", "tip3"]
-  }}
-}}
+Return ONLY a valid JSON array with exactly 12 leads. Each lead must have these fields:
+- name (string): Company or person name
+- type (string): "b2c" or "b2b"
+- category (string): e.g. "Organic Retailer", "Eco Store", "Wholesale Buyer"
+- country (string)
+- city (string)
+- email (string): realistic email
+- phone (string): realistic phone with country code
+- website (string): realistic URL
+- instagram (string): @handle
+- linkedin (string): LinkedIn URL
+- whatsapp (string): phone number
+- description (string): 1-2 sentence description
+- why_good (string): why this is a good lead for Silasya/Shoumitra
+- potential_value (string): e.g. "High", "Medium", "$5,000-$10,000/month"
+- score (number): 1-100 lead quality score
+- tags (array of strings): relevant tags
+- source (string): where this lead was found
 
-Find at least 12 real leads using web search. Return ONLY the JSON object, no other text."""
+Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=6000,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
+            max_tokens=4000,
             messages=[{"role": "user", "content": prompt}]
         )
 
-        # Extract text from all response blocks
-        raw = ""
-        for block in message.content:
-            if hasattr(block, "text"):
-                raw += block.text
-
-        raw = raw.strip().replace("```json", "").replace("```", "").strip()
-        start = raw.find("{")
-        end = raw.rfind("}")
+        raw = message.content[0].text.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.find("[")
+        end = raw.rfind("]")
         if start != -1 and end != -1:
             raw = raw[start:end+1]
 
-        parsed = json.loads(raw)
-        leads = parsed.get("leads", [])
-        demand_intelligence = parsed.get("demand_intelligence", {})
+        leads = json.loads(raw)
 
-        # Normalize fields
-        for lead in leads:
-            if not lead.get("name"):
-                lead["name"] = lead.pop("company_name", None) or lead.pop("business_name", None) or "Unknown Lead"
-            lead["type"] = "b2b" if "b2b" in str(lead.get("type","")).lower() else "b2c"
-            try:
-                lead["score"] = int(lead.get("score", 50))
-            except:
-                lead["score"] = 50
-            if not isinstance(lead.get("tags"), list):
-                lead["tags"] = []
-
-        # Update search history
+        # Update search history with count
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("UPDATE search_history SET leads_found = %s WHERE id = %s", (len(leads), search_id))
@@ -319,8 +230,7 @@ Find at least 12 real leads using web search. Return ONLY the JSON object, no ot
         cursor.close()
         conn.close()
 
-        return jsonify({"success": True, "leads": leads, "count": len(leads), "demand_intelligence": demand_intelligence})
-
+        return jsonify({"success": True, "leads": leads, "count": len(leads)})
 
     except json.JSONDecodeError as e:
         return jsonify({"error": f"AI returned invalid data: {str(e)}"}), 500
@@ -331,7 +241,6 @@ Find at least 12 real leads using web search. Return ONLY the JSON object, no ot
 # ─── Save Lead ───────────────────────────────────────────────────────────────
 
 @app.route("/api/leads", methods=["GET"])
-@login_required
 def get_leads():
     try:
         conn = get_db()
@@ -377,7 +286,6 @@ def get_leads():
 
 
 @app.route("/api/leads", methods=["POST"])
-@login_required
 def save_lead():
     try:
         data = request.get_json()
@@ -429,7 +337,6 @@ def save_lead():
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["PUT"])
-@login_required
 def update_lead(lead_id):
     try:
         data = request.get_json()
@@ -447,7 +354,6 @@ def update_lead(lead_id):
 
 
 @app.route("/api/leads/<int:lead_id>", methods=["DELETE"])
-@login_required
 def delete_lead(lead_id):
     try:
         conn = get_db()
@@ -464,7 +370,6 @@ def delete_lead(lead_id):
 # ─── Stats ───────────────────────────────────────────────────────────────────
 
 @app.route("/api/stats")
-@login_required
 def get_stats():
     try:
         conn = get_db()
@@ -487,7 +392,6 @@ def get_stats():
 # ─── Export CSV ──────────────────────────────────────────────────────────────
 
 @app.route("/api/export/csv")
-@login_required
 def export_csv():
     try:
         conn = get_db()
@@ -510,7 +414,6 @@ def export_csv():
 # ─── Team ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/team", methods=["GET"])
-@login_required
 def get_team():
     try:
         conn = get_db()
@@ -528,7 +431,6 @@ def get_team():
 
 
 @app.route("/api/team", methods=["POST"])
-@login_required
 def add_team():
     try:
         data = request.get_json()
@@ -548,7 +450,6 @@ def add_team():
 # ─── AI Outreach ─────────────────────────────────────────────────────────────
 
 @app.route("/api/outreach/<int:lead_id>", methods=["POST"])
-@login_required
 def generate_outreach(lead_id):
     try:
         data = request.get_json()
@@ -566,7 +467,7 @@ def generate_outreach(lead_id):
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shumitra (Indian organic brand).
+        prompt = f"""Write a {channel} outreach message for this lead on behalf of Silasya & Shoumitra (Indian organic brand).
 
 Lead: {lead.get('name')}
 Type: {lead.get('type')}
@@ -587,352 +488,14 @@ Write a short, friendly, professional {channel} message. Keep it under 150 words
         return jsonify({"error": str(e)}), 500
 
 
-# ─── Buyer Requirements ──────────────────────────────────────────────────────
-
-@app.route("/api/buyer-requirements", methods=["POST"])
-@login_required
-def buyer_requirements():
-    try:
-        data = request.get_json()
-        niche = data.get("niche", "organic products")
-        country = data.get("country", "worldwide")
-        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""Use web search to find REAL active buyer requirements and RFQs posted on:
-IndiaMART, Alibaba, TradeIndia, Global Sources, ExportHub, EC21, Made-in-China, DHgate, Thomasnet, Fibre2Fashion, Tradewheels, Go4WorldBusiness, and any other B2B trade portals.
-
-Search for buyers looking for: {niche}
-Target regions: {country}
-
-Return ONLY a valid JSON array of at least 10 real buyer requirements:
-[
-  {{
-    "buyer_name": "Company or buyer name",
-    "platform": "IndiaMART / Alibaba / TradeIndia / etc",
-    "requirement": "Exactly what they need e.g. 500 organic cotton t-shirts",
-    "quantity": "e.g. 500 units / 1000 kg",
-    "budget": "e.g. $2,000-$5,000 or ₹1.5L",
-    "country": "Buyer country",
-    "city": "Buyer city",
-    "timeline": "e.g. Within 30 days / Urgent",
-    "contact": "email or phone if available",
-    "posted": "e.g. 2 days ago / This week",
-    "verified": true,
-    "match_score": 85,
-    "url": "Direct link to the requirement if available",
-    "notes": "Any extra details about what they want"
-  }}
-]
-Return ONLY the JSON array, no other text."""
-
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=5000,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = ""
-        for block in message.content:
-            if hasattr(block, "text"):
-                raw += block.text
-        raw = raw.strip().replace("```json", "").replace("```", "").strip()
-        start = raw.find("[")
-        end = raw.rfind("]")
-        if start != -1 and end != -1:
-            raw = raw[start:end+1]
-        requirements = json.loads(raw)
-        return jsonify({"success": True, "requirements": requirements, "count": len(requirements)})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── AI Email Writer ──────────────────────────────────────────────────────────
-
-@app.route("/api/email/<int:lead_id>", methods=["POST"])
-@login_required
-def write_email(lead_id):
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM leads WHERE id=%s", (lead_id,))
-        lead = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if not lead:
-            return jsonify({"error": "Lead not found"}), 404
-
-        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""Write a professional sales email for this lead on behalf of Silasya & Shumitra (Indian organic brand exporting worldwide).
-
-Lead Details:
-Name: {lead.get('name')}
-Type: {lead.get('type','b2b')}
-Category: {lead.get('category','')}
-Country: {lead.get('country','')}
-Description: {lead.get('description','')}
-Why Good Lead: {lead.get('why_good','')}
-Demand Signals: {lead.get('demand_signals','')}
-
-Write 3 versions:
-1. SHORT (50 words) — quick intro for cold email
-2. MEDIUM (100 words) — warm pitch with value proposition  
-3. DETAILED (200 words) — full pitch with product details, certifications, MOQ
-
-Return ONLY a valid JSON object:
-{{
-  "subject": "Best email subject line",
-  "short": "50 word version",
-  "medium": "100 word version", 
-  "detailed": "200 word version",
-  "whatsapp": "Short 30 word WhatsApp message version",
-  "follow_up": "Follow-up message to send after 3 days of no reply"
-}}"""
-
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = message.content[0].text.strip().replace("```json","").replace("```","").strip()
-        start = raw.find("{")
-        end = raw.rfind("}")
-        if start != -1 and end != -1:
-            raw = raw[start:end+1]
-        result = json.loads(raw)
-        return jsonify({"success": True, **result})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── Follow-up Reminders ──────────────────────────────────────────────────────
-
-@app.route("/api/reminders", methods=["GET"])
-@login_required
-def get_reminders():
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT r.*, l.name as lead_name, l.email as lead_email, l.country as lead_country
-            FROM reminders r JOIN leads l ON r.lead_id = l.id
-            ORDER BY r.remind_at ASC
-        """)
-        reminders = cursor.fetchall()
-        for r in reminders:
-            if r.get("remind_at"):
-                r["remind_at"] = r["remind_at"].isoformat()
-            if r.get("created_at"):
-                r["created_at"] = r["created_at"].isoformat()
-        cursor.close()
-        conn.close()
-        return jsonify({"success": True, "reminders": reminders})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/reminders", methods=["POST"])
-@login_required
-def add_reminder():
-    try:
-        data = request.get_json()
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO reminders (lead_id, note, remind_at, created_by)
-            VALUES (%s, %s, %s, %s)
-        """, (data.get("lead_id"), data.get("note"), data.get("remind_at"), data.get("created_by", "Team")))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/reminders/<int:reminder_id>", methods=["DELETE"])
-@login_required
-def delete_reminder(reminder_id):
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM reminders WHERE id=%s", (reminder_id,))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── Competitor Tracker ───────────────────────────────────────────────────────
-
-@app.route("/api/competitors", methods=["POST"])
-@login_required
-def track_competitors():
-    try:
-        data = request.get_json()
-        niche = data.get("niche", "organic apparel")
-        country = data.get("country", "India")
-        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""Use web search to find real competitors selling {niche} in {country} and worldwide.
-Search Google, Instagram, IndiaMART, Alibaba, Etsy, Amazon, Flipkart and social media.
-
-Return ONLY a valid JSON array of competitors:
-[
-  {{
-    "name": "Competitor brand name",
-    "website": "their website",
-    "instagram": "@handle",
-    "country": "where they are based",
-    "products": "what they sell",
-    "price_range": "their pricing",
-    "monthly_revenue": "estimated revenue if available",
-    "strengths": "what they do well",
-    "weaknesses": "where they are weak — your opportunity",
-    "target_market": "who they sell to",
-    "unique_angle": "their USP",
-    "threat_level": "Low / Medium / High",
-    "opportunity": "How Silasya/Shumitra can beat them or capture their customers"
-  }}
-]
-Return ONLY the JSON array, no other text."""
-
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4000,
-            tools=[{"type": "web_search_20250305", "name": "web_search"}],
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = ""
-        for block in message.content:
-            if hasattr(block, "text"):
-                raw += block.text
-        raw = raw.strip().replace("```json","").replace("```","").strip()
-        start = raw.find("[")
-        end = raw.rfind("]")
-        if start != -1 and end != -1:
-            raw = raw[start:end+1]
-        competitors = json.loads(raw)
-        return jsonify({"success": True, "competitors": competitors})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── Export Excel ─────────────────────────────────────────────────────────────
-
-@app.route("/api/export/excel")
-@login_required
-def export_excel():
-    try:
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM leads ORDER BY created_at DESC")
-        leads = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        try:
-            import openpyxl
-            from openpyxl.styles import Font, PatternFill, Alignment
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = "Silasya Leads"
-            headers = ["ID","Name","Type","Category","Country","City","Email","Phone","Website","Instagram","LinkedIn","Score","Status","Potential Value","Description","Why Good","Source","Saved By","Created"]
-            gold = PatternFill("solid", fgColor="C9A84C")
-            bold = Font(bold=True, color="000000")
-            for col, h in enumerate(headers, 1):
-                cell = ws.cell(row=1, column=col, value=h)
-                cell.fill = gold
-                cell.font = bold
-                cell.alignment = Alignment(horizontal="center")
-            for row, l in enumerate(leads, 2):
-                ws.append([l.get("id"),l.get("name"),l.get("type"),l.get("category"),l.get("country"),l.get("city"),l.get("email"),l.get("phone"),l.get("website"),l.get("instagram"),l.get("linkedin"),l.get("score"),l.get("status"),l.get("potential_value"),l.get("description"),l.get("why_good"),l.get("source"),l.get("saved_by"),str(l.get("created_at",""))])
-            for col in ws.columns:
-                ws.column_dimensions[col[0].column_letter].width = 18
-            import io
-            buf = io.BytesIO()
-            wb.save(buf)
-            buf.seek(0)
-            return Response(buf.getvalue(), mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                          headers={"Content-Disposition": "attachment;filename=silasya_leads.xlsx"})
-        except ImportError:
-            # Fallback to CSV if openpyxl not installed
-            lines = ["Name,Type,Category,Country,City,Email,Phone,Score,Status"]
-            for l in leads:
-                lines.append(f'"{l.get("name","")}","{l.get("type","")}","{l.get("category","")}","{l.get("country","")}","{l.get("city","")}","{l.get("email","")}","{l.get("phone","")}","{l.get("score","")}","{l.get("status","")}"')
-            return Response("\n".join(lines), mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=silasya_leads.csv"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── Update Lead Score ────────────────────────────────────────────────────────
-
-@app.route("/api/leads/<int:lead_id>/score", methods=["PUT"])
-@login_required
-def update_score(lead_id):
-    try:
-        data = request.get_json()
-        conn = get_db()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM leads WHERE id=%s", (lead_id,))
-        lead = cursor.fetchone()
-        if not lead:
-            cursor.close()
-            conn.close()
-            return jsonify({"error": "Lead not found"}), 404
-
-        # Auto-calculate score based on activity signals
-        score = int(lead.get("score", 50))
-        activity = data.get("activity", "")
-        if activity == "opened_email": score = min(100, score + 10)
-        elif activity == "replied": score = min(100, score + 25)
-        elif activity == "clicked_link": score = min(100, score + 15)
-        elif activity == "no_response_7days": score = max(0, score - 10)
-        elif activity == "unsubscribed": score = max(0, score - 30)
-        else:
-            score = int(data.get("score", score))
-
-        cursor2 = conn.cursor()
-        cursor2.execute("UPDATE leads SET score=%s WHERE id=%s", (score, lead_id))
-        conn.commit()
-        cursor2.close()
-        cursor.close()
-        conn.close()
-        return jsonify({"success": True, "new_score": score})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-
-
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify({"error": "Bad request", "message": str(e)}), 400
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({"error": "Endpoint not found", "message": str(e)}), 404
-
-@app.errorhandler(405)
-def method_not_allowed(e):
-    return jsonify({"error": "Method not allowed", "message": str(e)}), 405
-
-@app.errorhandler(500)
-def internal_error(e):
-    return jsonify({"error": "Internal server error", "message": str(e)}), 500
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return jsonify({"error": type(e).__name__, "message": str(e)}), 500
-
-
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("🚀 Starting Silasya & Shumitra Lead Finder...")
+    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
     print("📦 Initializing database...")
     init_db()
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "False").lower() == "true"  # Default OFF — debug=True bypasses error handlers
+    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
     print(f"✅ App running at http://localhost:{port}")
     print(f"📋 Share with team: http://YOUR_IP:{port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
