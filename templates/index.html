@@ -422,7 +422,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       </div>
     </div>
     <div id="rfq-loading" style="display:none" class="prog-box show">
-      <div class="prog-title">🔍 Searching IndiaMART, Alibaba, TradeIndia, Global Sources, EC21…</div>
+      <div class="prog-title">🔍 Searching IndiaMART, Alibaba, GeM Portal, Corporate Buyers, Hotels, NGOs, Schools…</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="rfq-bar" style="width:0%"></div></div>
     </div>
     <div id="rfq-container">
@@ -473,7 +473,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       </div>
     </div>
     <div id="comp-loading" style="display:none" class="prog-box show">
-      <div class="prog-title">🎯 Searching Google, Instagram, Alibaba, Amazon for competitors…</div>
+      <div class="prog-title">🎯 Searching Amazon, Instagram, Alibaba, Etsy, MSME, Startup India, Hospitality Brands…</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="comp-bar" style="width:0%"></div></div>
     </div>
     <div id="comp-container">
@@ -1321,14 +1321,44 @@ function switchCRMTab(tab){
 }
 let currentCRMTab = 'leads';
 
+let remindModalData = null;
+let remindModalBtn = null;
+
+function openRemindModal(name, defaultNote, saveData, btn){
+  remindModalData = saveData;
+  remindModalBtn = btn;
+  document.getElementById('remind-modal-name').textContent = name;
+  document.getElementById('remind-modal-note').value = defaultNote;
+  const tomorrow = new Date(Date.now()+86400000);
+  document.getElementById('remind-modal-date').value = tomorrow.toISOString().slice(0,16);
+  document.getElementById('remind-modal').style.display = 'flex';
+}
+
+function closeRemindModal(){
+  document.getElementById('remind-modal').style.display = 'none';
+  remindModalData = null;
+  remindModalBtn = null;
+}
+
+async function submitRemindModal(){
+  const date = document.getElementById('remind-modal-date').value;
+  const note = document.getElementById('remind-modal-note').value;
+  if(!date){alert('Please select a date.');return;}
+  if(!note){alert('Please add a note.');return;}
+  closeRemindModal();
+  const {lead, btn} = remindModalData;
+  const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+  const d=await res.json();
+  if(d.id){
+    await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:d.id,note,remind_at:date,created_by:'Team'})});
+    if(remindModalBtn){remindModalBtn.textContent='✅ Reminded!';remindModalBtn.style.color='var(--green)';remindModalBtn.disabled=true;}
+    if(btn){btn.textContent='✅ Reminded!';btn.style.color='var(--green)';btn.disabled=true;}
+  }
+}
+
 async function saveAndRemindRFQ(i, btn){
   const r = lastRFQList[i];
   if(!r) return;
-  const date = prompt('Set reminder date and time (YYYY-MM-DDTHH:MM):', new Date(Date.now()+86400000).toISOString().slice(0,16));
-  if(!date) return;
-  const note = prompt('Reminder note:', 'Follow up on RFQ: '+(r.requirement||''));
-  if(note===null) return;
-  // Save lead first
   const lead = {
     name: r.buyer_name||'Unknown Buyer', type:'b2b', category:'Buyer RFQ',
     country:r.country||'', city:r.city||'', email:r.contact_email||'',
@@ -1337,21 +1367,17 @@ async function saveAndRemindRFQ(i, btn){
     potential_value:r.budget||'', score:r.match_score||60,
     source:r.platform||'Buyer RFQ', tags:['rfq','buyer'], saved_by:'Team'
   };
-  const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
-  const d=await res.json();
-  if(d.id){
-    await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:d.id,note,remind_at:date,created_by:'Team'})});
-    btn.textContent='✅ Saved & Reminded!';btn.style.color='var(--green)';btn.disabled=true;
-  }
+  openRemindModal(
+    r.buyer_name||'Unknown Buyer',
+    'Follow up on RFQ: '+(r.requirement||''),
+    {lead, btn},
+    btn
+  );
 }
 
 async function saveAndRemindComp(i, btn){
   const comp = lastCompList[i];
   if(!comp) return;
-  const date = prompt('Set reminder date and time (YYYY-MM-DDTHH:MM):', new Date(Date.now()+86400000).toISOString().slice(0,16));
-  if(!date) return;
-  const note = prompt('Reminder note:', 'Check on competitor: '+(comp.name||''));
-  if(note===null) return;
   const lead = {
     name: comp.name||'Unknown Competitor', type:'b2b', category:'Competitor',
     country:comp.country||'', website:comp.website||'', instagram:comp.instagram||'',
@@ -1360,12 +1386,12 @@ async function saveAndRemindComp(i, btn){
     potential_value:comp.price_range||'', score:comp.threat_level==='High'?80:60,
     source:'Competitor Tracker', tags:['competitor'], saved_by:'Team'
   };
-  const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
-  const d=await res.json();
-  if(d.id){
-    await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:d.id,note,remind_at:date,created_by:'Team'})});
-    btn.textContent='✅ Saved & Reminded!';btn.style.color='var(--green)';btn.disabled=true;
-  }
+  openRemindModal(
+    comp.name||'Unknown Competitor',
+    'Check on competitor: '+(comp.name||''),
+    {lead, btn},
+    btn
+  );
 }
 </script>
 
@@ -1432,5 +1458,28 @@ async function saveAndRemindComp(i, btn){
   </div>
 </div>
 
+
+<!-- ══ REMIND ME MODAL ══ -->
+<div id="remind-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:420px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:20px">🔔 Set Reminder</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Lead / Company</label>
+      <div id="remind-modal-name" style="font-size:13px;color:var(--text);padding:8px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Remind Me On</label>
+      <input type="datetime-local" id="remind-modal-date" onclick="this.showPicker()" style="width:100%;cursor:pointer">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Note</label>
+      <input type="text" id="remind-modal-note" placeholder="e.g. Follow up on sample request" style="width:100%">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="submitRemindModal()" class="btn btn-gold" style="flex:1">✅ Set Reminder</button>
+      <button onclick="closeRemindModal()" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
