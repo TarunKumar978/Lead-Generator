@@ -751,11 +751,17 @@ def buyer_requirements():
         data = request.get_json()
         niche = data.get("niche", "organic products")
         country = data.get("country", "worldwide")
+        business = data.get("business", "both")
+        buyer_type = data.get("buyer_type", "all")
+        keywords = data.get("keywords", "")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian export and supply company that fulfills ANY buyer demand (organic or conventional). Shoumitra can supply: fresh vegetables, fruits, spices, grains, pulses, medicines, Ayurvedic products, organic products, textiles, apparel, home decor, handicrafts, chemicals, raw materials, processed foods, dry fruits — anything a buyer needs. Find 10 realistic buyer requirements for:
+Business Focus: {business}
 Product Niche: {niche}
 Target Country: {country}
+Preferred Buyer Type: {buyer_type}
+Extra Keywords: {keywords}
 
 Search across ALL these buyer sources:
 TRADE PORTALS: IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub, Faire, Handshake
@@ -813,6 +819,9 @@ def find_competitors():
         data = request.get_json()
         niche = data.get("niche", "organic products")
         country = data.get("country", "India")
+        business = data.get("business", "both")
+        comp_type = data.get("comp_type", "all")
+        keywords = data.get("keywords", "")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         prompt = f"""You are a competitive intelligence expert. Find 10 competitors for:
@@ -820,8 +829,11 @@ def find_competitors():
 - SHOUMITRA: Indian B2B export/supply company that fulfills ANY demand — vegetables, fruits, spices, medicines, textiles, handicrafts, chemicals, raw materials, processed foods — organic or conventional
 
 Find competitors in:
+Business Focus: {business}
 Product Niche: {niche}
 Country: {country}
+Competitor Type Focus: {comp_type}
+Extra Keywords: {keywords}
 
 Search across ALL these channels:
 MARKETPLACES: Amazon sellers, Flipkart sellers, Meesho sellers, Etsy shops, Faire brands
