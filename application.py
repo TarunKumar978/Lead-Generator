@@ -178,7 +178,7 @@ def ai_search():
 - SILASYA: B2C organic apparel, toys, home decor brand
 - SHOUMITRA: B2B export arm selling organic products worldwide
 
-Generate 20 realistic, detailed leads based on these parameters:
+Generate 15 realistic, detailed leads based on these parameters:
 Business Focus: {business}
 Target Country/Region: {country}
 Product Niche: {niche}
@@ -186,7 +186,7 @@ Lead Type: {lead_type}
 Search Channels: {channels}
 Extra Keywords: {keywords}
 
-Return ONLY a valid JSON array with exactly 20 leads. Each lead must have these fields:
+Return ONLY a valid JSON array with exactly 15 leads. Each lead must have these fields:
 - name (string): Company or person name
 - type (string): "b2c" or "b2b"
 - category (string): e.g. "Organic Retailer", "Eco Store", "Wholesale Buyer"
@@ -209,7 +209,7 @@ Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=8000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -737,11 +737,11 @@ def buyer_requirements():
         country = data.get("country", "worldwide")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert. Generate 20 realistic buyer requirements/RFQs for:
+        prompt = f"""You are a B2B sourcing expert. Generate 10 realistic buyer requirements/RFQs for:
 Product Niche: {niche}
 Target Country: {country}
 
-Return ONLY a valid JSON array with 20 items. Each item must have:
+Return ONLY a valid JSON array with 10 items. Each item must have:
 - buyer_name (string): buyer company name
 - country (string)
 - city (string)
@@ -758,7 +758,7 @@ Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = message.content[0].text.strip()
@@ -783,11 +783,11 @@ def find_competitors():
         country = data.get("country", "India")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a competitive intelligence expert. Find 20 competitors for an Indian organic brand in:
+        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand in:
 Product Niche: {niche}
 Country: {country}
 
-Return ONLY a valid JSON array with 20 items. Each item must have:
+Return ONLY a valid JSON array with 10 items. Each item must have:
 - name (string): competitor brand name
 - country (string)
 - website (string): realistic URL
@@ -804,7 +804,7 @@ Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = message.content[0].text.strip()
