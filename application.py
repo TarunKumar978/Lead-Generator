@@ -262,6 +262,10 @@ def get_leads():
             query += " AND (name LIKE %s OR email LIKE %s OR country LIKE %s OR category LIKE %s)"
             s = f"%{search}%"
             params.extend([s, s, s, s])
+        category_filter = request.args.get("category", "")
+        if category_filter:
+            query += " AND category = %s"
+            params.append(category_filter)
 
         query += " ORDER BY created_at DESC"
         cursor.execute(query, params)
