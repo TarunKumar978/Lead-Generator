@@ -707,18 +707,6 @@ def logout():
     return jsonify({"success": True})
 
 
-# ─── Main ────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
-    print("📦 Initializing database...")
-    init_db()
-    port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
-    print(f"✅ App running at http://localhost:{port}")
-    print(f"📋 Share with team: http://YOUR_IP:{port}")
-    app.run(host="0.0.0.0", port=port, debug=debug)
-
 
 # ─── Buyer Requirements ───────────────────────────────────────────────────────
 
@@ -808,3 +796,16 @@ Return ONLY the JSON array, no other text."""
         return jsonify({"success": True, "results": results, "count": len(results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
+    print("📦 Initializing database...")
+    init_db()
+    port = int(os.getenv("PORT", 5000))
+    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    print(f"✅ App running at http://localhost:{port}")
+    print(f"📋 Share with team: http://YOUR_IP:{port}")
+    app.run(host="0.0.0.0", port=port, debug=debug)
