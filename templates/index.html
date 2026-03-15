@@ -859,44 +859,72 @@ async function searchRFQs(){
 function renderRFQs(list){
   const c=document.getElementById('rfq-container');
   if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">📦</div>No requirements found. Try different keywords.</div>';return;}
-  c.innerHTML=list.map(r=>{
-    const sc=r.match_score>=80?'sr-hot':r.match_score>=60?'sr-warm':'sr-new';
-    return `<div class="lc" style="border-color:${r.match_score>=80?'rgba(207,76,76,0.3)':r.match_score>=60?'rgba(201,168,76,0.3)':'var(--border)'}">
-      <div class="lc-top">
-        <div style="flex:1">
-          <div class="lc-name">${r.buyer_name||'Unknown Buyer'}</div>
-          <div class="lc-badges">
-            <span class="lb lb-b2b">${r.platform||'Trade Portal'}</span>
-            ${r.buyer_type?`<span class="lb" style="background:rgba(62,207,122,0.1);color:var(--green);border:1px solid rgba(62,207,122,0.3)">${r.buyer_type}</span>`:''}
-            <span class="ls">📍 ${r.country||''}${r.city?', '+r.city:''} · Posted: ${r.posted||'Recently'}</span>
-          </div>
-          <div style="font-size:13px;font-weight:600;color:var(--gold);margin:8px 0">📦 ${r.requirement||''}</div>
-          <div class="lc-contact">
-            ${r.quantity?`<div class="ci">📏 Qty: <strong>${r.quantity}</strong></div>`:''}
-            ${r.budget?`<div class="ci">💰 Budget: <strong>${r.budget}</strong></div>`:''}
-            ${r.timeline?`<div class="ci">⏰ Timeline: <strong>${r.timeline}</strong></div>`:''}
-            ${r.contact?`<div class="ci">📞 ${r.contact}</div>`:''}
-          </div>
-          ${r.notes?`<div class="lc-desc">${r.notes}</div>`:''}
-          ${r.demand_signals?`<div class="lc-why">✦ ${r.demand_signals}</div>`:''}
+  // show counts
+  const b2b=list.filter(r=>r.buyer_type&&!['Individual','B2C','Consumer','Person'].includes(r.buyer_type)).length||list.length;
+  const b2c=list.length-b2b;
+  const high=list.filter(r=>r.urgency==='High').length;
+  c.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--muted)">Found <strong style="color:var(--text)">${list.length}</strong> Buyer RFQs</div>
+    <span class="lb lb-b2b">${b2b} B2B</span>
+    <span class="lb lb-b2c">${b2c} B2C</span>
+    <span class="lb" style="background:rgba(207,76,76,0.1);color:var(--accent);border:1px solid rgba(207,76,76,0.3)">${high} High Urgency</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="fb active" onclick="filterRFQ('all',this)">All</button>
+      <button class="fb" onclick="filterRFQ('b2b',this)">B2B</button>
+      <button class="fb" onclick="filterRFQ('b2c',this)">B2C</button>
+      <button class="fb" onclick="filterRFQ('high',this)">🔥 Urgent</button>
+    </div>
+  </div>
+  <div id="rfq-list">`+list.map((r,i)=>rfqCard(r,i)).join('')+'</div>';
+}
+function filterRFQ(f,btn){
+  document.querySelectorAll('#rfq-container .fb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  let list=lastRFQList;
+  if(f==='b2b') list=lastRFQList.filter(r=>r.urgency!=='Personal'&&r.buyer_type&&!['Individual','Consumer'].includes(r.buyer_type));
+  else if(f==='b2c') list=lastRFQList.filter(r=>['Individual','Consumer','Personal'].includes(r.buyer_type));
+  else if(f==='high') list=lastRFQList.filter(r=>r.urgency==='High');
+  document.getElementById('rfq-list').innerHTML=list.map((r,i)=>rfqCard(r,lastRFQList.indexOf(r))).join('');
+}
+function rfqCard(r,i){
+  const sc=r.match_score>=80?'sr-hot':r.match_score>=60?'sr-warm':'sr-new';
+  const isB2B=!['Individual','Consumer','Personal'].includes(r.buyer_type);
+  const badge=isB2B?'<span class="lb lb-b2b">B2B · Shoumitra</span>':'<span class="lb lb-b2c">B2C · Silasya</span>';
+  const acts=[];
+  if(r.website) acts.push(`<a class="cab cweb" href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank">🌐 Website</a>`);
+  if(r.phone) acts.push(`<a class="cab cwa" href="https://wa.me/${r.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`);
+  if(r.contact_email) acts.push(`<a class="cab" href="mailto:${r.contact_email}">✉️ Email</a>`);
+  if(r.linkedin) acts.push(`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://www.linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`);
+  if(r.facebook) acts.push(`<a class="cab" href="${r.facebook.startsWith('http')?r.facebook:'https://facebook.com/'+r.facebook}" target="_blank">📘 Facebook</a>`);
+  if(r.url) acts.push(`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`);
+  acts.push(`<button class="cab" onclick="saveAndRemindRFQ(${i},this)" style="border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">🔔 Remind Me</button>`);
+  acts.push(`<button class="cab csave" onclick="saveRFQByIndex(${i},this)" style="cursor:pointer">💾 Save</button>`);
+  return `<div class="lc">
+    <div class="lc-top">
+      <div style="flex:1;min-width:0">
+        <div class="lc-name">${r.buyer_name||'Unknown Buyer'}</div>
+        <div class="lc-badges">${badge}
+          ${r.buyer_type?`<span class="lb" style="background:rgba(62,207,122,0.1);color:var(--green);border:1px solid rgba(62,207,122,0.3)">${r.buyer_type}</span>`:''}
+          <span class="ls">📍 ${r.platform||'Trade Portal'} · ${r.country||''}${r.city?', '+r.city:''}</span>
+          <span class="ls">🕐 ${r.posted||'Recently'}</span>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-          <div class="sr ${sc}">${r.match_score||'—'}</div>
-          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Match</div>
+        <div class="lc-why">📦 ${r.requirement||''}</div>
+        <div class="lc-contact">
+          ${r.quantity?`<div class="ci">📏 Qty: <strong>${r.quantity}</strong></div>`:''}
+          ${r.budget?`<div class="ci">💰 Budget: <strong>${r.budget}</strong></div>`:''}
+          ${r.contact_email?`<div class="ci">✉️ ${r.contact_email}</div>`:''}
+          ${r.phone?`<div class="ci">📞 ${r.phone}</div>`:''}
+          ${r.website?`<div class="ci">🌐 <a href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank">${(r.website||'').replace(/https?:\/\//,'').slice(0,30)}</a></div>`:''}
         </div>
+        ${r.notes?`<div class="lc-desc">${r.notes}</div>`:''}
       </div>
-      <div class="ca">
-        ${r.website?`<a class="cab cweb" href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank">🌐 Website</a>`:''}
-        ${r.contact_email?`<a class="cab" href="mailto:${r.contact_email}">✉️ Email</a>`:''}
-        ${r.phone?`<a class="cab cwa" href="https://wa.me/${r.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
-        ${r.linkedin?`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://www.linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
-        ${r.facebook?`<a class="cab" href="${r.facebook.startsWith('http')?r.facebook:'https://facebook.com/'+r.facebook}" target="_blank" style="color:#4267B2">📘 Facebook</a>`:''}
-        ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
-        <button class="cab" onclick="saveAndRemindRFQ(${list.indexOf(r)},this)" style="background:rgba(207,122,62,0.15);border-color:rgba(207,122,62,0.3);color:#cf7a3e;cursor:pointer">🔔 Remind Me</button>
-        <button class="cab" onclick="saveRFQByIndex(${list.indexOf(r)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+        <div class="sr ${sc}">${r.match_score||'—'}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${r.urgency||'Medium'}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+    <div class="ca">${acts.join('')}</div>
+  </div>`;
 }
 
 // ── Email Writer ──────────────────────────────────────────────────────────────
@@ -1069,54 +1097,81 @@ async function trackCompetitors(){
 function renderCompetitors(list){
   const c=document.getElementById('comp-container');
   if(!list.length){c.innerHTML='<div class="empty"><div class="empty-icon">🎯</div>No competitors found.</div>';return;}
-  c.innerHTML=list.map(comp=>{
-    const threat=comp.threat_level||'Medium';
-    const tc=threat==='High'?'var(--accent)':threat==='Medium'?'var(--gold)':'var(--green)';
-    return `<div class="lc">
-      <div class="lc-top">
-        <div style="flex:1">
-          <div class="lc-name">${comp.name||'Unknown'}</div>
-          <div class="lc-badges">
-            <span class="ls">📍 ${comp.country||''}</span>
-            ${comp.website?`<a class="ls" href="${comp.website}" target="_blank" style="color:var(--purple);text-decoration:none">🌐 Website</a>`:''}
-            ${comp.instagram?`<a class="ls" href="https://instagram.com/${comp.instagram.replace('@','')}" target="_blank" style="color:var(--ig);text-decoration:none">📸 ${comp.instagram}</a>`:''}
+  const high=list.filter(c=>c.threat_level==='High').length;
+  const med=list.filter(c=>c.threat_level==='Medium').length;
+  const low=list.filter(c=>c.threat_level==='Low').length;
+  c.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--muted)">Found <strong style="color:var(--text)">${list.length}</strong> Competitors</div>
+    <span class="lb" style="background:rgba(207,76,76,0.1);color:var(--accent);border:1px solid rgba(207,76,76,0.3)">${high} High Threat</span>
+    <span class="lb" style="background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3)">${med} Medium</span>
+    <span class="lb" style="background:rgba(62,207,122,0.1);color:var(--green);border:1px solid rgba(62,207,122,0.3)">${low} Low</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="fb active" onclick="filterComp('all',this)">All</button>
+      <button class="fb" onclick="filterComp('high',this)">🔴 High</button>
+      <button class="fb" onclick="filterComp('medium',this)">🟡 Medium</button>
+      <button class="fb" onclick="filterComp('low',this)">🟢 Low</button>
+    </div>
+  </div>
+  <div id="comp-list">`+list.map((comp,i)=>compCard(comp,i)).join('')+'</div>';
+}
+function filterComp(f,btn){
+  document.querySelectorAll('#comp-container .fb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  let list=lastCompList;
+  if(f==='high') list=lastCompList.filter(c=>c.threat_level==='High');
+  else if(f==='medium') list=lastCompList.filter(c=>c.threat_level==='Medium');
+  else if(f==='low') list=lastCompList.filter(c=>c.threat_level==='Low');
+  document.getElementById('comp-list').innerHTML=list.map((comp,i)=>compCard(comp,lastCompList.indexOf(comp))).join('');
+}
+function compCard(comp,i){
+  const threat=comp.threat_level||'Medium';
+  const sc=threat==='High'?'sr-hot':threat==='Medium'?'sr-warm':'sr-new';
+  const isB2B=comp.target_market&&!comp.target_market.toLowerCase().includes('consumer');
+  const badge=isB2B?'<span class="lb lb-b2b">B2B · Shoumitra</span>':'<span class="lb lb-b2c">B2C · Silasya</span>';
+  const acts=[];
+  if(comp.website) acts.push(`<a class="cab cweb" href="${comp.website.startsWith('http')?comp.website:'https://'+comp.website}" target="_blank">🌐 Website</a>`);
+  if(comp.phone) acts.push(`<a class="cab cwa" href="https://wa.me/${comp.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`);
+  if(comp.instagram) acts.push(`<a class="cab cig" href="https://www.instagram.com/${comp.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`);
+  if(comp.linkedin) acts.push(`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://www.linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`);
+  if(comp.facebook) acts.push(`<a class="cab" href="${comp.facebook.startsWith('http')?comp.facebook:'https://facebook.com/'+comp.facebook}" target="_blank">📘 Facebook</a>`);
+  if(comp.email) acts.push(`<a class="cab" href="mailto:${comp.email}">✉️ Email</a>`);
+  acts.push(`<button class="cab" onclick="saveAndRemindComp(${i},this)" style="border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">🔔 Remind Me</button>`);
+  acts.push(`<button class="cab csave" onclick="saveCompetitorByIndex(${i},this)" style="cursor:pointer">💾 Save</button>`);
+  return `<div class="lc">
+    <div class="lc-top">
+      <div style="flex:1;min-width:0">
+        <div class="lc-name">${comp.name||'Unknown'}</div>
+        <div class="lc-badges">${badge}
+          <span class="ls">📍 ${comp.platform||'Web'} · ${comp.country||''}${comp.city?', '+comp.city:''}</span>
+        </div>
+        <div class="lc-desc">${comp.products||''}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div style="background:rgba(62,207,122,0.05);border:1px solid rgba(62,207,122,0.2);border-radius:8px;padding:10px">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);font-weight:700;margin-bottom:5px">Their Weakness = Your Opportunity</div>
+            <div style="font-size:12px">${comp.weaknesses||'—'}</div>
           </div>
-          <div class="lc-desc">${comp.products||''}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div style="background:rgba(62,207,122,0.05);border:1px solid rgba(62,207,122,0.2);border-radius:8px;padding:10px">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);font-weight:700;margin-bottom:5px">Their Weakness = Your Opportunity</div>
-              <div style="font-size:12px">${comp.weaknesses||'—'}</div>
-            </div>
-            <div style="background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:10px">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:700;margin-bottom:5px">How to Beat Them</div>
-              <div style="font-size:12px">${comp.how_to_beat||comp.opportunity||'—'}</div>
-            </div>
-          </div>
-          <div class="lc-contact" style="margin-top:10px">
-            ${comp.price_range?`<div class="ci">💰 Price: ${comp.price_range}</div>`:''}
-            ${comp.target_market?`<div class="ci">🎯 Target: ${comp.target_market}</div>`:''}
-            ${comp.monthly_revenue?`<div class="ci">📈 Revenue: ${comp.monthly_revenue}</div>`:''}
-            ${comp.selling_channels?`<div class="ci">🛒 Sells on: ${comp.selling_channels}</div>`:''}
-            ${comp.certifications?`<div class="ci">✅ Certified: ${comp.certifications}</div>`:''}
+          <div style="background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:10px">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:700;margin-bottom:5px">How to Beat Them</div>
+            <div style="font-size:12px">${comp.how_to_beat||'—'}</div>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-left:12px">
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Threat</div>
-          <div style="font-size:14px;font-weight:700;color:${tc};border:2px solid ${tc};border-radius:8px;padding:4px 10px">${threat}</div>
+        <div class="lc-contact" style="margin-top:10px">
+          ${comp.price_range?`<div class="ci">💰 Price: ${comp.price_range}</div>`:''}
+          ${comp.target_market?`<div class="ci">🎯 Target: ${comp.target_market}</div>`:''}
+          ${comp.monthly_revenue?`<div class="ci">📈 Revenue: ${comp.monthly_revenue}</div>`:''}
+          ${comp.selling_channels?`<div class="ci">🛒 Sells on: ${comp.selling_channels}</div>`:''}
+          ${comp.certifications?`<div class="ci">✅ Certified: ${comp.certifications}</div>`:''}
+          ${comp.email?`<div class="ci">✉️ ${comp.email}</div>`:''}
+          ${comp.phone?`<div class="ci">📞 ${comp.phone}</div>`:''}
         </div>
       </div>
-      <div class="ca">
-        ${comp.website?`<a class="cab cweb" href="${comp.website.startsWith('http')?comp.website:'https://'+comp.website}" target="_blank">🌐 Website</a>`:''}
-        ${comp.instagram?`<a class="cab" href="https://www.instagram.com/${comp.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`:''}
-        ${comp.linkedin?`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://www.linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
-        ${comp.facebook?`<a class="cab" href="${comp.facebook.startsWith('http')?comp.facebook:'https://facebook.com/'+comp.facebook}" target="_blank" style="color:#4267B2">📘 Facebook</a>`:''}
-        ${comp.email?`<a class="cab" href="mailto:${comp.email}">✉️ Email</a>`:''}
-        ${comp.phone?`<a class="cab cwa" href="https://wa.me/${comp.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
-        <button class="cab" onclick="saveAndRemindComp(${list.indexOf(comp)},this)" style="background:rgba(207,122,62,0.15);border-color:rgba(207,122,62,0.3);color:#cf7a3e;cursor:pointer">🔔 Remind Me</button>
-        <button class="cab" onclick="saveCompetitorByIndex(${list.indexOf(comp)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+        <div class="sr ${sc}">${threat==='High'?'🔴':threat==='Medium'?'🟡':'🟢'}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${threat}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+    <div class="ca">${acts.join('')}</div>
+  </div>`;
 }
 
 
