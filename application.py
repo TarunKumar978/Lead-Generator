@@ -1,5 +1,5 @@
 """
-Silasya & Shoumitra — AI Lead Finder
+Silasya & Shumitra — AI Lead Finder
 Flask + MySQL Backend
 """
 
