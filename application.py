@@ -799,6 +799,8 @@ Return ONLY a valid JSON array with 10 items. Each item must have:
 - how_to_beat (string): 1 sentence strategy
 - threat_level (string): "High", "Medium", or "Low"
 - platform (string): where they are strongest e.g. "Instagram", "Amazon", "Alibaba"
+- email (string): their contact email if known, else empty string
+- phone (string): their contact phone if known, else empty string
 
 Return ONLY the JSON array, no other text."""
 
