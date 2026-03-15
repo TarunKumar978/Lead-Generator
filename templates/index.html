@@ -888,10 +888,12 @@ function renderRFQs(list){
       <div class="ca">
         ${r.website?`<a class="cab cweb" href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank">🌐 Website</a>`:''}
         ${r.contact_email?`<a class="cab" href="mailto:${r.contact_email}">✉️ Email</a>`:''}
-        ${r.contact_email?`<a class="cab cwa" href="https://wa.me/${r.contact_email.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
-        ${r.linkedin?`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        ${r.phone?`<a class="cab cwa" href="https://wa.me/${r.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
+        ${r.linkedin?`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://www.linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        ${r.facebook?`<a class="cab" href="${r.facebook.startsWith('http')?r.facebook:'https://facebook.com/'+r.facebook}" target="_blank" style="color:#4267B2">📘 Facebook</a>`:''}
         ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
-        <button id="rfq-save-${list.indexOf(r)}" class="cab" onclick="saveRFQByIndex(${list.indexOf(r)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+        <button class="cab" onclick="saveAndRemindRFQ(${list.indexOf(r)},this)" style="background:rgba(207,122,62,0.15);border-color:rgba(207,122,62,0.3);color:#cf7a3e;cursor:pointer">🔔 Remind Me</button>
+        <button class="cab" onclick="saveRFQByIndex(${list.indexOf(r)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
   }).join('');
@@ -1107,8 +1109,10 @@ function renderCompetitors(list){
         ${comp.website?`<a class="cab cweb" href="${comp.website.startsWith('http')?comp.website:'https://'+comp.website}" target="_blank">🌐 Website</a>`:''}
         ${comp.instagram?`<a class="cab" href="https://www.instagram.com/${comp.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`:''}
         ${comp.linkedin?`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://www.linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        ${comp.facebook?`<a class="cab" href="${comp.facebook.startsWith('http')?comp.facebook:'https://facebook.com/'+comp.facebook}" target="_blank" style="color:#4267B2">📘 Facebook</a>`:''}
         ${comp.email?`<a class="cab" href="mailto:${comp.email}">✉️ Email</a>`:''}
         ${comp.phone?`<a class="cab cwa" href="https://wa.me/${comp.phone.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
+        <button class="cab" onclick="saveAndRemindComp(${list.indexOf(comp)},this)" style="background:rgba(207,122,62,0.15);border-color:rgba(207,122,62,0.3);color:#cf7a3e;cursor:pointer">🔔 Remind Me</button>
         <button class="cab" onclick="saveCompetitorByIndex(${list.indexOf(comp)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
@@ -1316,6 +1320,53 @@ function switchCRMTab(tab){
   loadCRMLeads();
 }
 let currentCRMTab = 'leads';
+
+async function saveAndRemindRFQ(i, btn){
+  const r = lastRFQList[i];
+  if(!r) return;
+  const date = prompt('Set reminder date and time (YYYY-MM-DDTHH:MM):', new Date(Date.now()+86400000).toISOString().slice(0,16));
+  if(!date) return;
+  const note = prompt('Reminder note:', 'Follow up on RFQ: '+(r.requirement||''));
+  if(note===null) return;
+  // Save lead first
+  const lead = {
+    name: r.buyer_name||'Unknown Buyer', type:'b2b', category:'Buyer RFQ',
+    country:r.country||'', city:r.city||'', email:r.contact_email||'',
+    phone:r.phone||'', website:r.website||'', linkedin:r.linkedin||'',
+    description:r.requirement||'', why_good:'RFQ — Budget: '+(r.budget||'N/A'),
+    potential_value:r.budget||'', score:r.match_score||60,
+    source:r.platform||'Buyer RFQ', tags:['rfq','buyer'], saved_by:'Team'
+  };
+  const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+  const d=await res.json();
+  if(d.id){
+    await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:d.id,note,remind_at:date,created_by:'Team'})});
+    btn.textContent='✅ Saved & Reminded!';btn.style.color='var(--green)';btn.disabled=true;
+  }
+}
+
+async function saveAndRemindComp(i, btn){
+  const comp = lastCompList[i];
+  if(!comp) return;
+  const date = prompt('Set reminder date and time (YYYY-MM-DDTHH:MM):', new Date(Date.now()+86400000).toISOString().slice(0,16));
+  if(!date) return;
+  const note = prompt('Reminder note:', 'Check on competitor: '+(comp.name||''));
+  if(note===null) return;
+  const lead = {
+    name: comp.name||'Unknown Competitor', type:'b2b', category:'Competitor',
+    country:comp.country||'', website:comp.website||'', instagram:comp.instagram||'',
+    linkedin:comp.linkedin||'', email:comp.email||'', phone:comp.phone||'',
+    description:comp.products||'', why_good:'Weakness: '+(comp.weaknesses||''),
+    potential_value:comp.price_range||'', score:comp.threat_level==='High'?80:60,
+    source:'Competitor Tracker', tags:['competitor'], saved_by:'Team'
+  };
+  const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+  const d=await res.json();
+  if(d.id){
+    await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:d.id,note,remind_at:date,created_by:'Team'})});
+    btn.textContent='✅ Saved & Reminded!';btn.style.color='var(--green)';btn.disabled=true;
+  }
+}
 </script>
 
 <!-- Email Writer Modal -->
