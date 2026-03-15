@@ -1112,6 +1112,12 @@ function renderCompetitors(list){
         ${comp.linkedin?`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
         <button id="comp-save-${list.indexOf(comp)}" class="cab" onclick="saveCompetitorByIndex(${list.indexOf(comp)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
+      <div class="ca">
+        ${comp.website?`<a class="cab cweb" href="${comp.website.startsWith('http')?comp.website:'https://'+comp.website}" target="_blank">🌐 Website</a>`:''}
+        ${comp.instagram?`<a class="cab" href="https://instagram.com/${comp.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`:''}
+        ${comp.linkedin?`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        <button id="comp-save-${list.indexOf(comp)}" class="cab" onclick="saveCompetitorByIndex(${list.indexOf(comp)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+      </div>
     </div>`;
   }).join('');
 }
