@@ -15,6 +15,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ─── Simple In-Memory Cache ───────────────────────────────────────────────────
+import hashlib, time
+_cache = {}
+CACHE_TTL = 86400  # 24 hours
+
+def cache_get(key):
+    if key in _cache:
+        data, ts = _cache[key]
+        if time.time() - ts < CACHE_TTL:
+            return data
+        del _cache[key]
+    return None
+
+def cache_set(key, data):
+    _cache[key] = (data, time.time())
+
+def make_key(*args):
+    return hashlib.md5("|".join(str(a).lower().strip() for a in args).encode()).hexdigest()
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "silasya-secret-2025")
 CORS(app)
@@ -172,6 +191,12 @@ def ai_search():
         cursor.close()
         conn.close()
 
+        # Check cache first
+        cache_key = make_key("leads", business, country, niche, lead_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "leads": cached, "count": len(cached), "cached": True})
+
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
         prompt = f"""You are a lead generation expert for two Indian businesses:
@@ -241,6 +266,7 @@ Return ONLY the JSON array, no other text."""
         cursor.close()
         conn.close()
 
+        cache_set(cache_key, leads)
         return jsonify({"success": True, "leads": leads, "count": len(leads)})
 
     except json.JSONDecodeError as e:
@@ -787,6 +813,12 @@ def buyer_requirements():
         buyer_type = data.get("buyer_type", "all")
         keywords = data.get("keywords", "")
 
+        # Check cache first
+        cache_key = make_key("rfq", niche, country, business, buyer_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
+
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian export and supply company that fulfills ANY buyer demand (organic or conventional). Shoumitra can supply: fresh vegetables, fruits, spices, grains, pulses, medicines, Ayurvedic products, organic products, textiles, apparel, home decor, handicrafts, chemicals, raw materials, processed foods, dry fruits — anything a buyer needs. Find 10 realistic buyer requirements for:
 Business Focus: {business}
@@ -838,6 +870,7 @@ Return ONLY the JSON array, no other text."""
         if start != -1 and end != -1:
             raw = raw[start:end+1]
         results = json.loads(raw)
+        cache_set(cache_key, results)
         return jsonify({"success": True, "results": results, "count": len(results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -854,6 +887,12 @@ def find_competitors():
         business = data.get("business", "both")
         comp_type = data.get("comp_type", "all")
         keywords = data.get("keywords", "")
+
+        # Check cache first
+        cache_key = make_key("comp", niche, country, business, comp_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         prompt = f"""You are a competitive intelligence expert. Find 10 competitors for:
@@ -915,6 +954,7 @@ Return ONLY the JSON array, no other text."""
         if start != -1 and end != -1:
             raw = raw[start:end+1]
         results = json.loads(raw)
+        cache_set(cache_key, results)
         return jsonify({"success": True, "results": results, "count": len(results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
