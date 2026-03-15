@@ -685,7 +685,12 @@ def update_reminder(reminder_id):
         data = request.get_json()
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE reminders SET done=%s WHERE id=%s", (data.get("done", 1), reminder_id))
+        if "remind_at" in data:
+            cursor.execute("UPDATE reminders SET done=%s, remind_at=%s WHERE id=%s",
+                         (data.get("done", 0), data.get("remind_at"), reminder_id))
+        else:
+            cursor.execute("UPDATE reminders SET done=%s WHERE id=%s",
+                         (data.get("done", 1), reminder_id))
         conn.commit()
         cursor.close()
         conn.close()
