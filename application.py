@@ -753,22 +753,38 @@ def buyer_requirements():
         country = data.get("country", "worldwide")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert. Generate 10 realistic buyer requirements/RFQs for:
+        prompt = f"""You are a B2B sourcing expert for Silasya (organic apparel, toys, home decor) and Shoumitra (organic B2B export). Find 10 realistic buyer requirements for:
 Product Niche: {niche}
 Target Country: {country}
 
+Search across ALL these buyer sources:
+TRADE PORTALS: IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub, Faire, Handshake
+GOVERNMENT: GeM portal bulk buyers, government school/hospital tenders, DGFT registered importers, CSR bulk buyers, export promotion councils (EPCH, AEPC, APEDA)
+CORPORATE GIFTING: Corporate gifting companies, HR departments buying festival/Diwali gifts, event management firms, wedding planners buying bulk gifts
+HOSPITALITY: Hotels, resorts, spas, wellness centers, yoga studios, Ayurveda centers buying organic products in bulk
+RETAIL CHAINS: Supermarket chains, organic store chains (Nature's Basket, Whole Foods), department stores, boutique chains
+SCHOOLS & INSTITUTIONS: Schools, NGOs, hospitals, charitable trusts, orphanages buying organic/eco products
+INTERNATIONAL: Fair trade organizations, organic importers, wholesale distributors, Amazon FBA sellers
+
 Return ONLY a valid JSON array with 10 items. Each item must have:
-- buyer_name (string): buyer company name
+- buyer_name (string): buyer company or person name
+- buyer_type (string): e.g. "Corporate Gifting", "Government Tender", "Hotel Chain", "NGO", "School", "Retail Chain", "International Importer", "Wedding Planner", "Spa & Wellness"
 - country (string)
 - city (string)
-- requirement (string): what they are looking for
+- requirement (string): exactly what they need
 - quantity (string): e.g. "500 units/month"
 - budget (string): e.g. "$5,000-$10,000"
-- contact_email (string): realistic email
-- platform (string): where RFQ was posted e.g. "IndiaMART", "Alibaba", "TradeIndia"
+- contact_email (string): realistic business email
+- phone (string): realistic phone with country code
+- whatsapp (string): same as phone
+- website (string): realistic company website URL
+- linkedin (string): realistic LinkedIn URL e.g. "https://linkedin.com/company/name"
+- facebook (string): realistic Facebook page URL
+- platform (string): exact platform/source where this RFQ was found
 - urgency (string): "High", "Medium", or "Low"
-- posted (string): recent date e.g. "2 days ago"
+- posted (string): e.g. "2 days ago"
 - match_score (number): 0-100 relevance score
+- notes (string): certifications needed, special requirements, additional details
 
 Return ONLY the JSON array, no other text."""
 
@@ -799,24 +815,43 @@ def find_competitors():
         country = data.get("country", "India")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand in:
+        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand (Silasya - apparel/toys/home decor, Shoumitra - B2B exports) in:
 Product Niche: {niche}
 Country: {country}
+
+Search across ALL these channels:
+MARKETPLACES: Amazon sellers, Flipkart sellers, Meesho sellers, Etsy shops, Faire brands
+SOCIAL MEDIA: Instagram organic brands, Facebook shops, Pinterest sellers
+D2C WEBSITES: Brands selling directly on their own website
+EXPORT PLATFORMS: Alibaba stores, IndiaMART suppliers, TradeIndia sellers
+GOVERNMENT REGISTERED: MSME registered organic brands, Startup India registered, GI tagged products
+RETAIL: Brands in Nature's Basket, Whole Foods, organic stores, boutiques
+HOSPITALITY SUPPLIERS: Brands supplying hotels, spas, wellness centers
+CORPORATE GIFTING BRANDS: Brands focused on corporate gifting market
+INTERNATIONAL: Fair trade certified brands, organic certified exporters
 
 Return ONLY a valid JSON array with 10 items. Each item must have:
 - name (string): competitor brand name
 - country (string)
-- website (string): realistic URL
-- instagram (string): @handle
+- city (string): their main city
+- website (string): realistic URL starting with https://
+- instagram (string): @handle without spaces
+- linkedin (string): realistic LinkedIn URL
+- facebook (string): realistic Facebook page URL
+- email (string): realistic contact email
+- phone (string): realistic phone with country code
+- whatsapp (string): same as phone
 - price_range (string): e.g. "₹500-₹2000" or "$10-$50"
-- products (string): what they sell
-- strengths (string): 1 sentence
-- weaknesses (string): 1 sentence
-- how_to_beat (string): 1 sentence strategy
+- products (string): exactly what they sell
+- strengths (string): their main strength in 1 sentence
+- weaknesses (string): their main weakness in 1 sentence
+- how_to_beat (string): specific actionable strategy to beat them
 - threat_level (string): "High", "Medium", or "Low"
-- platform (string): where they are strongest e.g. "Instagram", "Amazon", "Alibaba"
-- email (string): their contact email if known, else empty string
-- phone (string): their contact phone if known, else empty string
+- platform (string): their strongest sales channel
+- selling_channels (string): all platforms they sell on
+- monthly_revenue (string): estimated monthly revenue
+- target_market (string): exactly who they sell to
+- certifications (string): any certifications e.g. "GOTS, OEKO-TEX, Fair Trade"
 
 Return ONLY the JSON array, no other text."""
 
