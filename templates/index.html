@@ -847,7 +847,7 @@ async function searchRFQs(){
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
-    renderRFQs(d.results||[]);
+    lastRFQList=d.results||[]; renderRFQs(d.results||[]);
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
@@ -883,7 +883,7 @@ function renderRFQs(list){
         ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
         ${r.contact&&r.contact.includes('@')?`<a class="cab" href="mailto:${r.contact}">✉️ Email</a>`:''}
         ${r.contact?`<a class="cab cwa" href="https://wa.me/${r.contact.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
-        <button class="cab" onclick="saveRFQ(${JSON.stringify(r).replace(/`/g,"'")})" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+        <button class="cab" onclick="saveRFQByIndex(${list.indexOf(r)})" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
   }).join('');
@@ -1052,7 +1052,7 @@ async function trackCompetitors(){
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
-    renderCompetitors(d.results||[]);
+    lastCompList=d.results||[]; renderCompetitors(d.results||[]);
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
@@ -1202,6 +1202,71 @@ async function saveCompetitor(comp){
     if(d.success) alert('✅ Saved to Lead Bank!');
     else alert('Error: '+d.error);
   }catch(e){ alert('Failed: '+e.message); }
+}
+
+let lastRFQList = [];
+let lastCompList = [];
+
+function renderRFQsWithSave(list){
+  lastRFQList = list;
+  renderRFQs(list);
+}
+function renderCompetitorsWithSave(list){
+  lastCompList = list;
+  renderCompetitors(list);
+}
+
+async function saveRFQByIndex(i){
+  const r = lastRFQList[i];
+  if(!r){alert('Could not find RFQ data.');return;}
+  const lead = {
+    name: r.buyer_name||r.company||'Unknown Buyer',
+    type: 'b2b',
+    category: 'Buyer RFQ',
+    country: r.country||'',
+    city: r.city||'',
+    email: r.contact_email||'',
+    phone: r.contact||'',
+    description: r.requirement||'',
+    why_good: 'RFQ from '+(r.platform||'Trade Portal')+' — Budget: '+(r.budget||'N/A'),
+    potential_value: r.budget||'',
+    score: r.match_score||60,
+    source: r.platform||'Buyer RFQ',
+    tags: ['rfq','buyer'],
+    saved_by: 'Team'
+  };
+  try{
+    const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+    const d=await res.json();
+    if(d.success){alert('✅ Saved to Lead Bank!');loadLeadBank();}
+    else alert('Error: '+d.error);
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+async function saveCompetitorByIndex(i){
+  const comp = lastCompList[i];
+  if(!comp){alert('Could not find competitor data.');return;}
+  const lead = {
+    name: comp.name||'Unknown Competitor',
+    type: 'b2b',
+    category: 'Competitor',
+    country: comp.country||'',
+    website: comp.website||'',
+    instagram: comp.instagram||'',
+    description: comp.products||comp.strengths||'',
+    why_good: 'Weakness: '+(comp.weaknesses||'')+'  Beat them: '+(comp.how_to_beat||comp.opportunity||''),
+    potential_value: comp.price_range||'',
+    score: comp.threat_level==='High'?80:comp.threat_level==='Medium'?60:40,
+    source: 'Competitor Tracker',
+    tags: ['competitor',comp.threat_level||'Medium'],
+    saved_by: 'Team'
+  };
+  try{
+    const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+    const d=await res.json();
+    if(d.success){alert('✅ Saved to Lead Bank!');loadLeadBank();}
+    else alert('Error: '+d.error);
+  }catch(e){alert('Failed: '+e.message);}
 }
 </script>
 
