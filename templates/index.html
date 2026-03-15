@@ -372,10 +372,18 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <button id="tab-rfq" onclick="switchCRMTab('rfq')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">📦 BUYER RFQs</button>
       <button id="tab-competitor" onclick="switchCRMTab('competitor')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">🎯 COMPETITORS</button>
     </div>
+    <div id="bulk-toolbar" style="display:none;background:rgba(207,76,76,0.1);border:1px solid rgba(207,76,76,0.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px">
+      <span id="bulk-count" style="font-size:13px;font-weight:600;color:var(--accent)">0 selected</span>
+      <button onclick="bulkDelete()" style="background:rgba(207,76,76,0.2);border:1px solid rgba(207,76,76,0.4);color:var(--accent);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600">🗑 Delete Selected</button>
+      <button onclick="bulkUpdateStatus('contacted')" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">Mark Contacted</button>
+      <button onclick="bulkUpdateStatus('converted')" style="background:rgba(62,207,122,0.1);border:1px solid rgba(62,207,122,0.3);color:var(--green);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">Mark Converted</button>
+      <button onclick="clearSelection()" style="background:none;border:none;color:var(--muted);cursor:pointer;margin-left:auto">✕ Clear</button>
+    </div>
     <div class="panel" style="padding:0;overflow:hidden">
       <div class="leads-table-wrap">
         <table id="crm-table">
           <thead><tr>
+            <th style="width:32px"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" style="cursor:pointer"></th>
             <th>Type</th><th>Name</th><th>Email</th><th>Country</th>
             <th>Category</th><th>Score</th><th>Status</th><th>Reach Out</th><th>By</th><th>Date</th><th></th>
           </tr></thead>
@@ -836,6 +844,58 @@ function copyOutreach(){
   navigator.clipboard.writeText(document.getElementById('modal-body').textContent).then(()=>alert('Copied!'));
 }
 
+
+function toggleSelectAll(cb){
+  document.querySelectorAll('.lead-cb').forEach(c=>c.checked=cb.checked);
+  updateBulkToolbar();
+}
+function updateBulkToolbar(){
+  const checked=document.querySelectorAll('.lead-cb:checked');
+  const toolbar=document.getElementById('bulk-toolbar');
+  if(checked.length>0){
+    toolbar.style.display='flex';
+    document.getElementById('bulk-count').textContent=checked.length+' selected';
+  } else {
+    toolbar.style.display='none';
+    const sa=document.getElementById('select-all');
+    if(sa) sa.checked=false;
+  }
+}
+function clearSelection(){
+  document.querySelectorAll('.lead-cb').forEach(c=>c.checked=false);
+  const sa=document.getElementById('select-all');
+  if(sa) sa.checked=false;
+  document.getElementById('bulk-toolbar').style.display='none';
+}
+async function bulkDelete(){
+  const ids=[...document.querySelectorAll('.lead-cb:checked')].map(c=>parseInt(c.dataset.id));
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} leads? This cannot be undone.`)) return;
+  let deleted=0;
+  for(const id of ids){
+    try{
+      await fetch(API+`/api/leads/${id}`,{method:'DELETE'});
+      deleted++;
+      const row=document.getElementById(`row-${id}`);
+      if(row) row.remove();
+    }catch(e){console.error(e);}
+  }
+  clearSelection();
+  loadStats();
+  alert(`✅ ${deleted} leads deleted.`);
+}
+async function bulkUpdateStatus(status){
+  const ids=[...document.querySelectorAll('.lead-cb:checked')].map(c=>parseInt(c.dataset.id));
+  if(!ids.length) return;
+  for(const id of ids){
+    try{
+      await fetch(API+`/api/leads/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    }catch(e){console.error(e);}
+  }
+  clearSelection();
+  loadCRMLeads();
+  loadStats();
+}
 // ── CRM ───────────────────────────────────────────────────────────────────────
 async function loadCRMLeads(){
   const search=document.getElementById('crm-search').value;
@@ -867,7 +927,8 @@ function renderCRMTable(leads){
     if(l.linkedin) soc.push(`<a href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank" style="font-size:14px;text-decoration:none" title="LinkedIn">💼</a>`);
     if(l.email) soc.push(`<a href="mailto:${l.email}" style="font-size:14px;text-decoration:none" title="Email">✉️</a>`);
     const date=l.created_at?new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'—';
-    return `<tr>
+    return `<tr id="row-${l.id}">
+      <td><input type="checkbox" class="lead-cb" data-id="${l.id}" onclick="updateBulkToolbar()" style="cursor:pointer"></td>
       <td><span class="lb lb-${l.type}">${l.type.toUpperCase()}</span></td>
       <td><strong>${l.name}</strong></td>
       <td style="color:var(--muted)">${l.email||'—'}</td>
