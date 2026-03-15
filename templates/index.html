@@ -178,7 +178,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <span class="hbadge hb-b2b">B2B</span>
     <div class="db-dot" id="db-dot" title="Database status"></div>
     <span class="db-label" id="db-label">Connecting…</span>
-    <a href="/logout" style="padding:5px 13px;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</a>
+    <a href="#" onclick="doSignOut()" style="padding:5px 13px;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</a>
   </div>
 </header>
 
@@ -803,10 +803,14 @@ async function loadTeam(){
     const r=await fetch(API+'/api/team');
     const d=await r.json();
     const c=document.getElementById('team-list');
-    if(!d.members||!d.members.length){c.innerHTML='<div class="empty">No members yet.</div>';return;}
-    c.innerHTML=d.members.map(m=>`<div class="member-card">
-      <div><div class="mc-name">${m.name}</div><div class="mc-email">${m.email}</div></div>
-      <span class="role-badge">${m.role}</span>
+    const members=(d.members||[]).filter(m=>m.email!=='admin@silasya.com');
+    if(!members.length){c.innerHTML='<div class="empty">No members yet.</div>';return;}
+    c.innerHTML=members.map(m=>`<div class="member-card" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+      <div><div class="mc-name" style="font-weight:600">${m.name}</div><div class="mc-email" style="font-size:12px;color:var(--muted)">${m.email}</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="role-badge">${m.role}</span>
+        <button onclick="deleteMember(${m.id},'${m.name}')" style="background:rgba(207,76,76,0.1);border:1px solid rgba(207,76,76,0.3);color:#cf4c4c;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">Delete</button>
+      </div>
     </div>`).join('');
   } catch(e){ console.error(e); }
 }
@@ -1131,6 +1135,20 @@ async function fetchWithTimeout(url, options={}, timeout=115000){
 // ── Init ──────────────────────────────────────────────────────────────────────
 checkStatus();
 setInterval(loadStats, 30000);
+
+async function doSignOut(){
+  try{ await fetch(API+'/logout'); }catch(e){}
+  window.location.href='/login';
+}
+async function deleteMember(id,name){
+  if(!confirm('Remove '+name+' from the team?')) return;
+  try{
+    const r=await fetch(API+'/api/team/'+id,{method:'DELETE'});
+    const d=await r.json();
+    if(d.success) loadTeam();
+    else alert('Error: '+d.error);
+  }catch(e){ alert('Failed: '+e.message); }
+}
 </script>
 
 <!-- Email Writer Modal -->
