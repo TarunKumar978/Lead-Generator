@@ -723,7 +723,7 @@ Product Niche: {niche}
 Target Country: {country}
 
 Return ONLY a valid JSON array with 10 items. Each item must have:
-- company (string): buyer company name
+- buyer_name (string): buyer company name
 - country (string)
 - city (string)
 - requirement (string): what they are looking for
@@ -732,7 +732,8 @@ Return ONLY a valid JSON array with 10 items. Each item must have:
 - contact_email (string): realistic email
 - platform (string): where RFQ was posted e.g. "IndiaMART", "Alibaba", "TradeIndia"
 - urgency (string): "High", "Medium", or "Low"
-- posted_date (string): recent date
+- posted (string): recent date e.g. "2 days ago"
+- match_score (number): 0-100 relevance score
 
 Return ONLY the JSON array, no other text."""
 
