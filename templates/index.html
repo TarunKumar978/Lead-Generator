@@ -885,10 +885,12 @@ function renderRFQs(list){
         </div>
       </div>
       <div class="ca">
+        ${r.website?`<a class="cab cweb" href="${r.website.startsWith('http')?r.website:'https://'+r.website}" target="_blank">🌐 Website</a>`:''}
+        ${r.contact_email?`<a class="cab" href="mailto:${r.contact_email}">✉️ Email</a>`:''}
+        ${r.contact_email?`<a class="cab cwa" href="https://wa.me/${r.contact_email.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
+        ${r.linkedin?`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
         ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
-        ${r.contact&&r.contact.includes('@')?`<a class="cab" href="mailto:${r.contact}">✉️ Email</a>`:''}
-        ${r.contact?`<a class="cab cwa" href="https://wa.me/${r.contact.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
-        <button class="cab" onclick="saveRFQByIndex(${list.indexOf(r)})" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
+        <button id="rfq-save-${list.indexOf(r)}" class="cab" onclick="saveRFQByIndex(${list.indexOf(r)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
   }).join('');
@@ -1084,7 +1086,7 @@ function renderCompetitors(list){
             </div>
             <div style="background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:10px">
               <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:700;margin-bottom:5px">How to Beat Them</div>
-              <div style="font-size:12px">${comp.opportunity||'—'}</div>
+              <div style="font-size:12px">${comp.how_to_beat||comp.opportunity||'—'}</div>
             </div>
           </div>
           <div class="lc-contact" style="margin-top:10px">
@@ -1097,6 +1099,12 @@ function renderCompetitors(list){
           <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Threat</div>
           <div style="font-size:14px;font-weight:700;color:${tc};border:2px solid ${tc};border-radius:8px;padding:4px 10px">${threat}</div>
         </div>
+      </div>
+      <div class="ca">
+        ${comp.website?`<a class="cab cweb" href="${comp.website.startsWith('http')?comp.website:'https://'+comp.website}" target="_blank">🌐 Website</a>`:''}
+        ${comp.instagram?`<a class="cab" href="https://instagram.com/${comp.instagram.replace('@','')}" target="_blank">📸 Instagram</a>`:''}
+        ${comp.linkedin?`<a class="cab cli" href="${comp.linkedin.startsWith('http')?comp.linkedin:'https://linkedin.com/company/'+comp.linkedin}" target="_blank">💼 LinkedIn</a>`:''}
+        <button id="comp-save-${list.indexOf(comp)}" class="cab" onclick="saveCompetitorByIndex(${list.indexOf(comp)},this)" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
   }).join('');
@@ -1221,7 +1229,7 @@ function renderCompetitorsWithSave(list){
   renderCompetitors(list);
 }
 
-async function saveRFQByIndex(i){
+async function saveRFQByIndex(i,btn){
   const r = lastRFQList[i];
   if(!r){alert('Could not find RFQ data.');return;}
   const lead = {
@@ -1243,12 +1251,12 @@ async function saveRFQByIndex(i){
   try{
     const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
     const d=await res.json();
-    if(d.success){const btn=event.target;btn.textContent='✅ Saved!';btn.style.background='rgba(62,207,122,0.2)';btn.style.borderColor='rgba(62,207,122,0.4)';btn.style.color='var(--green)';btn.disabled=true;}
+    if(d.success){alert('✅ Saved to Lead Bank!');}
     else alert('Error: '+d.error);
   }catch(e){alert('Failed: '+e.message);}
 }
 
-async function saveCompetitorByIndex(i){
+async function saveCompetitorByIndex(i,btn){
   const comp = lastCompList[i];
   if(!comp){alert('Could not find competitor data.');return;}
   const lead = {
@@ -1269,7 +1277,7 @@ async function saveCompetitorByIndex(i){
   try{
     const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
     const d=await res.json();
-    if(d.success){const btn=event.target;btn.textContent='✅ Saved!';btn.style.background='rgba(62,207,122,0.2)';btn.style.borderColor='rgba(62,207,122,0.4)';btn.style.color='var(--green)';btn.disabled=true;}
+    if(d.success){alert('✅ Saved to Lead Bank!');}
     else alert('Error: '+d.error);
   }catch(e){alert('Failed: '+e.message);}
 }
