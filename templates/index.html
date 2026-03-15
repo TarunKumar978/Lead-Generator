@@ -787,6 +787,9 @@ async function saveSingleLead(localId){
       const btn=document.getElementById(`sbtn-${localId}`);
       if(btn){btn.textContent='✓ Saved';btn.classList.add('saved');}
       loadStats();
+    } else if(d.duplicate){
+      const btn=document.getElementById(`sbtn-${localId}`);
+      if(btn){btn.textContent='⚠️ Already Saved';btn.style.borderColor='rgba(201,168,76,0.4)';btn.style.color='var(--gold)';}
     } else alert('Error: '+d.error);
   } catch(e){ alert('Save failed: '+e.message); }
 }
