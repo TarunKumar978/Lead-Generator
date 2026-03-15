@@ -308,11 +308,43 @@ def save_lead():
             return jsonify({"error": "No data provided"}), 400
 
         name = data.get("name") or "Unknown Lead"
+        email = data.get("email", "")
+        phone = data.get("phone", "")
+        country = data.get("country", "")
         tags = data.get("tags", [])
         if isinstance(tags, list):
             tags = json.dumps(tags)
 
         conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check for duplicate by email
+        if email:
+            cursor.execute("SELECT id, name FROM leads WHERE email = %s", (email,))
+            existing = cursor.fetchone()
+            if existing:
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    "success": False,
+                    "duplicate": True,
+                    "id": existing["id"],
+                    "message": f"'{name}' already saved (duplicate email)"
+                })
+
+        # Check for duplicate by name + country
+        cursor.execute("SELECT id, name FROM leads WHERE name = %s AND country = %s", (name, country))
+        existing = cursor.fetchone()
+        if existing:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "success": False,
+                "duplicate": True,
+                "id": existing["id"],
+                "message": f"'{name}' from {country} already exists in Lead Bank"
+            })
+
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO leads (name, type, category, country, city, email, phone, website,
@@ -323,10 +355,10 @@ def save_lead():
             name,
             data.get("type", "b2c"),
             data.get("category", ""),
-            data.get("country", ""),
+            country,
             data.get("city", ""),
-            data.get("email", ""),
-            data.get("phone", ""),
+            email,
+            phone,
             data.get("website", ""),
             data.get("instagram", ""),
             data.get("linkedin", ""),
