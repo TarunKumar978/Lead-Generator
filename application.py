@@ -774,10 +774,11 @@ Return ONLY a valid JSON array with 10 items. Each item must have:
 - website (string): realistic URL
 - instagram (string): @handle
 - price_range (string): e.g. "₹500-₹2000" or "$10-$50"
+- products (string): what they sell
 - strengths (string): 1 sentence
 - weaknesses (string): 1 sentence
 - how_to_beat (string): 1 sentence strategy
-- market_share (string): "High", "Medium", or "Low"
+- threat_level (string): "High", "Medium", or "Low"
 - platform (string): where they are strongest e.g. "Instagram", "Amazon", "Alibaba"
 
 Return ONLY the JSON array, no other text."""
