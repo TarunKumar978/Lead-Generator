@@ -410,16 +410,62 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
   <!-- ══ BUYER RFQs PAGE ══ -->
   <div class="page" id="page-buyers">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="panel-title">Buyer <span>Requirements</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">Real RFQs from IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub & more</div>
+    <div class="panel-title" style="margin-bottom:4px">Buyer <span style="color:var(--gold)">Requirements</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:22px">Find companies actively looking to buy — IndiaMART, Alibaba, GeM Portal, Corporate Gifting, Hotels, NGOs, Schools & more</div>
+    <div class="panel" style="margin-bottom:20px">
+      <div class="grid2" style="margin-bottom:14px">
+        <div>
+          <label>Business Focus</label>
+          <select id="rfq-business">
+            <option value="both">Both — Silasya (B2C) + Shoumitra (B2B)</option>
+            <option value="silasya">Silasya only — B2C Buyers</option>
+            <option value="shoumitra">Shoumitra only — B2B Export Buyers</option>
+          </select>
+        </div>
+        <div>
+          <label>Target Country / Region</label>
+          <input id="rfq-country" placeholder="e.g. India, Germany, USA, UAE, Worldwide">
+        </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="rfq-niche" placeholder="e.g. organic cotton t-shirts" style="width:200px;padding:8px 12px;font-size:12px">
-        <input id="rfq-country" placeholder="e.g. Germany, USA, UAE" style="width:150px;padding:8px 12px;font-size:12px">
-        <button class="btn btn-gold" style="padding:8px 18px;font-size:12px" onclick="searchRFQs()">🔍 Find Buyers</button>
+      <div class="grid2" style="margin-bottom:14px">
+        <div>
+          <label>Product / Niche</label>
+          <select id="rfq-niche">
+            <option value="Organic Apparel / Clothing">Organic Apparel / Clothing</option>
+            <option value="Organic Toys / Kids">Organic Toys / Kids</option>
+            <option value="Home Décor / Sustainable Living">Home Décor / Sustainable Living</option>
+            <option value="Organic Gift Sets / Lifestyle">Organic Gift Sets / Lifestyle</option>
+            <option value="Handcrafted / Artisan Export">Handcrafted / Artisan Export</option>
+            <option value="Fresh Vegetables / Fruits">Fresh Vegetables / Fruits</option>
+            <option value="Spices / Condiments">Spices / Condiments</option>
+            <option value="Grains / Pulses">Grains / Pulses</option>
+            <option value="Medicines / Ayurvedic Products">Medicines / Ayurvedic Products</option>
+            <option value="Textiles / Fabric">Textiles / Fabric</option>
+            <option value="Processed Foods / Dry Fruits">Processed Foods / Dry Fruits</option>
+            <option value="All Categories">All Categories</option>
+          </select>
+        </div>
+        <div>
+          <label>Buyer Type</label>
+          <select id="rfq-buyer-type">
+            <option value="all">All Buyer Types</option>
+            <option value="Corporate Gifting">Corporate Gifting</option>
+            <option value="Government / GeM Portal">Government / GeM Portal</option>
+            <option value="Hotel / Hospitality">Hotel / Hospitality</option>
+            <option value="Schools / NGOs / Institutions">Schools / NGOs / Institutions</option>
+            <option value="Retail Chain / Supermarket">Retail Chain / Supermarket</option>
+            <option value="International Importer">International Importer</option>
+            <option value="Wedding / Event Planner">Wedding / Event Planner</option>
+            <option value="Spa / Wellness Center">Spa / Wellness Center</option>
+            <option value="Export / Wholesale">Export / Wholesale</option>
+          </select>
+        </div>
       </div>
+      <div style="margin-bottom:14px">
+        <label>Extra Keywords / Instructions</label>
+        <input id="rfq-keywords" placeholder="e.g. GOTS certified, bulk order, urgent requirement, festival gifting">
+      </div>
+      <button class="btn btn-gold" style="width:100%;padding:14px;font-size:14px;letter-spacing:0.06em" onclick="searchRFQs()">🔍 FIND BUYER REQUIREMENTS NOW</button>
     </div>
     <div id="rfq-loading" style="display:none" class="prog-box show">
       <div class="prog-title">🔍 Searching IndiaMART, Alibaba, GeM Portal, Corporate Buyers, Hotels, NGOs, Schools…</div>
@@ -463,14 +509,60 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <div class="page" id="page-competitors">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <div>
-        <div class="panel-title">Competitor <span>Tracker</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">See who else is selling what you sell — find their weaknesses and beat them</div>
+        <div class="panel-title">Competitor <span style="color:var(--gold)">Tracker</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Find competitors across Amazon, Instagram, Alibaba, Etsy, MSME, D2C websites & more</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="comp-niche" placeholder="e.g. organic cotton apparel" style="width:200px;padding:8px 12px;font-size:12px">
-        <input id="comp-country" placeholder="e.g. India, Germany" style="width:150px;padding:8px 12px;font-size:12px">
-        <button class="btn btn-gold" style="padding:8px 18px;font-size:12px" onclick="trackCompetitors()">🎯 Find Competitors</button>
+    </div>
+    <div class="panel" style="margin-bottom:20px">
+      <div class="grid2" style="margin-bottom:14px">
+        <div>
+          <label>Business Focus</label>
+          <select id="comp-business">
+            <option value="both">Both — Silasya (B2C) + Shoumitra (B2B)</option>
+            <option value="silasya">Silasya only — B2C Competitors</option>
+            <option value="shoumitra">Shoumitra only — B2B Export Competitors</option>
+          </select>
+        </div>
+        <div>
+          <label>Target Country / Region</label>
+          <input id="comp-country" placeholder="e.g. India, Germany, USA, Worldwide">
+        </div>
       </div>
+      <div class="grid2" style="margin-bottom:14px">
+        <div>
+          <label>Product / Niche</label>
+          <select id="comp-niche">
+            <option value="Organic Apparel / Clothing">Organic Apparel / Clothing</option>
+            <option value="Organic Toys / Kids">Organic Toys / Kids</option>
+            <option value="Home Décor / Sustainable Living">Home Décor / Sustainable Living</option>
+            <option value="Organic Gift Sets / Lifestyle">Organic Gift Sets / Lifestyle</option>
+            <option value="Handcrafted / Artisan Export">Handcrafted / Artisan Export</option>
+            <option value="Fresh Vegetables / Fruits">Fresh Vegetables / Fruits</option>
+            <option value="Spices / Condiments">Spices / Condiments</option>
+            <option value="Textiles / Fabric">Textiles / Fabric</option>
+            <option value="Medicines / Ayurvedic Products">Medicines / Ayurvedic Products</option>
+            <option value="All Categories">All Categories</option>
+          </select>
+        </div>
+        <div>
+          <label>Competitor Type</label>
+          <select id="comp-type">
+            <option value="all">All Types</option>
+            <option value="D2C Brand">D2C Brand (Own Website)</option>
+            <option value="Amazon Seller">Amazon / Flipkart Seller</option>
+            <option value="Instagram Brand">Instagram / Social Media Brand</option>
+            <option value="Export Brand">Export / B2B Brand</option>
+            <option value="Corporate Gifting Brand">Corporate Gifting Brand</option>
+            <option value="Hospitality Supplier">Hospitality Supplier</option>
+            <option value="Government Registered">MSME / Startup India Registered</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label>Extra Keywords / Instructions</label>
+        <input id="comp-keywords" placeholder="e.g. GOTS certified, premium segment, exports to Europe">
+      </div>
+      <button class="btn btn-gold" style="width:100%;padding:14px;font-size:14px;letter-spacing:0.06em" onclick="trackCompetitors()">🎯 FIND COMPETITORS NOW</button>
     </div>
     <div id="comp-loading" style="display:none" class="prog-box show">
       <div class="prog-title">🎯 Searching Amazon, Instagram, Alibaba, Etsy, MSME, Startup India, Hospitality Brands…</div>
