@@ -175,8 +175,8 @@ def ai_search():
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
         prompt = f"""You are a lead generation expert for two Indian organic businesses:
-- SILASYA: B2C organic apparel, toys, home decor brand
-- SHOUMITRA: B2B export arm selling organic products worldwide
+- SILASYA: B2C organic apparel, toys, home decor brand (baby products, kids toys, home decor, organic clothing)
+- SHOUMITRA: B2B export arm selling organic products worldwide (bulk export, wholesale, corporate supply)
 
 Generate 15 realistic, detailed leads based on these parameters:
 Business Focus: {business}
@@ -186,26 +186,35 @@ Lead Type: {lead_type}
 Search Channels: {channels}
 Extra Keywords: {keywords}
 
-Return ONLY a valid JSON array with exactly 15 leads. Each lead must have these fields:
+Search across ALL these sources to find leads:
+MARKETPLACES: Amazon, Flipkart, Meesho, Etsy, IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub, Faire, Handshake
+SOCIAL MEDIA: Instagram shops, Facebook marketplace, LinkedIn company pages, Pinterest shops
+GOVERNMENT: DGFT exporters list, Startup India, MSME registry, GeM portal buyers, export promotion councils (EPCH, AEPC, APEDA)
+CORPORATE GIFTING: Corporate gifting companies, HR departments, event management firms, wedding planners, festival gifting buyers
+RETAIL: Organic stores, eco stores, boutiques, department stores, supermarket chains (Nature's Basket, Godrej Nature's Basket, BigBasket organic)
+HOSPITALITY: Hotels, resorts, spas, wellness centers, yoga studios looking for organic products
+SCHOOLS & INSTITUTIONS: Schools, NGOs, hospitals looking for organic/eco products for kids
+INTERNATIONAL: Import companies, distributors, wholesalers, fair trade organizations
+
+Return ONLY a valid JSON array with exactly 15 leads. Each lead must have:
 - name (string): Company or person name
 - type (string): "b2c" or "b2b"
-- category (string): e.g. "Organic Retailer", "Eco Store", "Wholesale Buyer"
+- category (string): be specific e.g. "Amazon Seller", "Corporate Gifting", "Government Buyer", "Hotel Chain", "Organic Supermarket", "Export Distributor", "NGO", "Wedding Planner"
 - country (string)
 - city (string)
-- email (string): realistic email
+- email (string): realistic business email
 - phone (string): realistic phone with country code
 - website (string): realistic URL
 - instagram (string): @handle
-- linkedin (string): LinkedIn URL
+- linkedin (string): realistic LinkedIn URL
+- facebook (string): realistic Facebook page URL
 - whatsapp (string): phone number
 - description (string): 1-2 sentence description
-- why_good (string): why this is a good lead for Silasya/Shoumitra
-- potential_value (string): e.g. "High", "Medium", "$5,000-$10,000/month"
+- why_good (string): why this is a good lead for Silasya/Shoumitra specifically
+- potential_value (string): estimated monthly value e.g. "$5,000-$10,000/month"
 - score (number): 1-100 lead quality score
-- tags (array of strings): relevant tags
-- source (string): where this lead was found
-- facebook (string): realistic Facebook page URL
-- linkedin (string): realistic LinkedIn URL
+- tags (array of strings): relevant tags including source platform
+- source (string): exact platform/website where this lead was found
 
 Return ONLY the JSON array, no other text."""
 
