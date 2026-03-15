@@ -682,6 +682,7 @@ async function runSearch() {
       const d=await r.json();
       if(d.error) throw new Error(d.error);
       currentResults=d.leads.map((l,i)=>({...l,_id:Date.now()+i}));
+      if(d.cached){const el=document.getElementById('results-meta');if(el)el.textContent+=' · ⚡ From cache (saved API cost)';}
       if(d.demand_intelligence) showDemandIntelligence(d.demand_intelligence);
       showResults();
     } catch(e){
@@ -951,6 +952,7 @@ async function searchRFQs(){
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
     lastRFQList=d.results||[]; renderRFQs(d.results||[]);
+    if(d.cached){const c=document.getElementById('rfq-container');if(c)c.insertAdjacentHTML('afterbegin','<div style="font-size:11px;color:var(--green);margin-bottom:8px">⚡ Loaded from cache — no API cost</div>');}
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
@@ -1192,6 +1194,7 @@ async function trackCompetitors(){
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
     lastCompList=d.results||[]; renderCompetitors(d.results||[]);
+    if(d.cached){const c=document.getElementById('comp-container');if(c)c.insertAdjacentHTML('afterbegin','<div style="font-size:11px;color:var(--green);margin-bottom:8px">⚡ Loaded from cache — no API cost</div>');}
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
