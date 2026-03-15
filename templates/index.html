@@ -24,6 +24,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .nav-tab{padding:14px 20px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s}
 .nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .nav-tab:hover:not(.active){color:var(--text)}
+.kb-col{min-width:220px;max-width:220px;background:var(--surface);border-radius:12px;padding:12px;flex-shrink:0}
+.kb-col-title{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;padding:6px 10px;border-radius:6px;text-align:center}
+.kb-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s}
+.kb-card:hover{border-color:var(--gold)}
+.kb-card-name{font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kb-card-meta{font-size:11px;color:var(--muted);margin-bottom:6px}
+.kb-card-val{font-size:11px;color:var(--gold)}
+.kb-count{font-size:10px;color:var(--muted);margin-left:6px}
 /* layout */
 .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
 .page{display:none}.page.active{display:block;animation:fadeUp 0.3s ease}
@@ -365,6 +373,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         </select>
         <a href="/api/export/csv" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none">⬇ CSV</a>
         <a href="/api/export/excel" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none;border-color:rgba(62,207,122,0.4);color:var(--green)">📊 Excel</a>
+        <button id="view-table-btn" onclick="setCRMView('table')" style="padding:8px 14px;font-size:12px;border:1px solid var(--gold);color:var(--gold);background:rgba(201,168,76,0.15);border-radius:8px;cursor:pointer;font-weight:600">☰ Table</button>
+        <button id="view-kanban-btn" onclick="setCRMView('kanban')" style="padding:8px 14px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:none;border-radius:8px;cursor:pointer">⬛ Pipeline</button>
       </div>
     </div>
     <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
@@ -372,6 +382,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
       <button id="tab-rfq" onclick="switchCRMTab('rfq')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">📦 BUYER RFQs</button>
       <button id="tab-competitor" onclick="switchCRMTab('competitor')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">🎯 COMPETITORS</button>
     </div>
+    <div id="kanban-view" style="display:none;overflow-x:auto;padding-bottom:16px"></div>
     <div id="bulk-toolbar" style="display:none;background:rgba(207,76,76,0.1);border:1px solid rgba(207,76,76,0.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px">
       <span id="bulk-count" style="font-size:13px;font-weight:600;color:var(--accent)">0 selected</span>
       <button onclick="bulkDelete()" style="background:rgba(207,76,76,0.2);border:1px solid rgba(207,76,76,0.4);color:var(--accent);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600">🗑 Delete Selected</button>
@@ -1612,6 +1623,104 @@ async function saveAndRemindComp(i, btn){
     {lead, btn},
     btn
   );
+}
+
+let crmView = 'table';
+function setCRMView(view){
+  crmView = view;
+  const tableBtn = document.getElementById('view-table-btn');
+  const kanbanBtn = document.getElementById('view-kanban-btn');
+  const tablePanel = document.querySelector('#page-crm .panel');
+  const kanbanPanel = document.getElementById('kanban-view');
+  const bulkToolbar = document.getElementById('bulk-toolbar');
+  if(view === 'table'){
+    tablePanel.style.display='block';
+    kanbanPanel.style.display='none';
+    bulkToolbar.style.display='none';
+    tableBtn.style.borderColor='var(--gold)';tableBtn.style.color='var(--gold)';tableBtn.style.background='rgba(201,168,76,0.15)';
+    kanbanBtn.style.borderColor='var(--border)';kanbanBtn.style.color='var(--muted)';kanbanBtn.style.background='none';
+    loadCRMLeads();
+  } else {
+    tablePanel.style.display='none';
+    kanbanPanel.style.display='block';
+    bulkToolbar.style.display='none';
+    kanbanBtn.style.borderColor='var(--gold)';kanbanBtn.style.color='var(--gold)';kanbanBtn.style.background='rgba(201,168,76,0.15)';
+    tableBtn.style.borderColor='var(--border)';tableBtn.style.color='var(--muted)';tableBtn.style.background='none';
+    loadKanban();
+  }
+}
+
+async function loadKanban(){
+  try{
+    const r=await fetch(API+'/api/leads?limit=500');
+    const d=await r.json();
+    renderKanban(d.leads||[]);
+  }catch(e){console.error(e);}
+}
+
+function renderKanban(leads){
+  const cols = [
+    {id:'new',     label:'New',       color:'#888780', bg:'rgba(136,135,128,0.15)'},
+    {id:'warm',    label:'Warm',      color:'#c9a84c', bg:'rgba(201,168,76,0.15)'},
+    {id:'hot',     label:'Hot',       color:'#cf4c4c', bg:'rgba(207,76,76,0.15)'},
+    {id:'contacted',label:'Contacted',color:'#4c8bcf', bg:'rgba(76,139,207,0.15)'},
+    {id:'converted',label:'Converted',color:'#3ecf7a', bg:'rgba(62,207,122,0.15)'},
+    {id:'closed',  label:'Closed',    color:'#6e6b67', bg:'rgba(110,107,103,0.15)'},
+  ];
+  const grouped = {};
+  cols.forEach(c=>grouped[c.id]=[]);
+  leads.forEach(l=>{
+    const s=l.status||'new';
+    if(grouped[s]) grouped[s].push(l);
+    else grouped['new'].push(l);
+  });
+
+  const c=document.getElementById('kanban-view');
+  c.innerHTML=`<div style="display:flex;gap:12px;padding:4px 2px;min-width:max-content">
+    ${cols.map(col=>`
+      <div class="kb-col">
+        <div class="kb-col-title" style="background:${col.bg};color:${col.color}">
+          ${col.label} <span class="kb-count">${grouped[col.id].length}</span>
+        </div>
+        ${grouped[col.id].length===0?`<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">No leads</div>`:''}
+        ${grouped[col.id].map(l=>`
+          <div class="kb-card" onclick="showKanbanDetail(${l.id})">
+            <div class="kb-card-name" title="${l.name}">${l.name}</div>
+            <div class="kb-card-meta">
+              <span class="lb lb-${l.type}" style="font-size:9px;padding:1px 6px">${l.type.toUpperCase()}</span>
+              📍 ${l.country||'—'}
+            </div>
+            ${l.potential_value?`<div class="kb-card-val">💰 ${l.potential_value}</div>`:''}
+            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+              ${['new','warm','hot','contacted','converted'].filter(s=>s!==col.id).map(s=>`
+                <button onclick="event.stopPropagation();moveKanbanCard(${l.id},'${s}',this)" 
+                  style="font-size:9px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer">
+                  → ${s}
+                </button>`).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+async function moveKanbanCard(id, status, btn){
+  btn.textContent='Moving…';
+  try{
+    await fetch(API+`/api/leads/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    loadKanban();
+    loadStats();
+  }catch(e){alert('Failed: '+e.message);}
+}
+
+function showKanbanDetail(id){
+  // Switch to table view and highlight the lead
+  setCRMView('table');
+  setTimeout(()=>{
+    const row=document.getElementById(`row-${id}`);
+    if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.style.background='rgba(201,168,76,0.1)';setTimeout(()=>row.style.background='',2000);}
+  },500);
 }
 </script>
 
