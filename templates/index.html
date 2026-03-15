@@ -442,7 +442,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
           <input type="hidden" id="rem-lead-id">
           <div id="rem-selected-lead" style="font-size:11px;color:var(--green);margin-top:4px"></div>
         </div>
-        <div><label>Remind Me On</label><input id="rem-date" type="datetime-local"></div>
+        <div><label>Remind Me On</label><input id="rem-date" type="datetime-local" onclick="this.showPicker()" style="cursor:pointer"></div>
         <div><label>Note</label><input id="rem-note" placeholder="e.g. Follow up on sample request"></div>
       </div>
       <button class="btn btn-gold" onclick="addReminder()" style="margin-top:8px">+ Set Reminder</button>
@@ -1203,7 +1203,7 @@ async function deleteMember(id,name){
     <input type="hidden" id="reminder-lead-id">
     <div style="margin-bottom:14px">
       <label>Reminder Date & Time</label>
-      <input type="datetime-local" id="modal-rem-date" style="margin-top:6px">
+      <input type="datetime-local" id="modal-rem-date" onclick="this.showPicker()" style="cursor:pointer" style="margin-top:6px">
     </div>
     <div style="margin-bottom:14px">
       <label>Note (what to say / ask)</label>
