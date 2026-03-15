@@ -204,6 +204,8 @@ Return ONLY a valid JSON array with exactly 15 leads. Each lead must have these 
 - score (number): 1-100 lead quality score
 - tags (array of strings): relevant tags
 - source (string): where this lead was found
+- facebook (string): realistic Facebook page URL
+- linkedin (string): realistic LinkedIn URL
 
 Return ONLY the JSON array, no other text."""
 
