@@ -334,6 +334,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         <button class="fb" onclick="filterRes('b2b',this)">B2B</button>
         <button class="fb" onclick="filterRes('hot',this)">🔥 Hot</button>
         <button class="fb" onclick="filterRes('warm',this)">🌤 Warm</button>
+        <button class="fb" onclick="filterRes('rfq',this)" style="border-color:rgba(201,168,76,0.4);color:var(--gold)">📦 Buyer RFQs</button>
+        <button class="fb" onclick="filterRes('competitor',this)" style="border-color:rgba(207,76,76,0.4);color:var(--accent)">🎯 Competitors</button>
       </div>
       <div id="leads-container"></div>
     </div>
@@ -627,6 +629,8 @@ function filterRes(f,btn){
   else if(f==='b2b') list=currentResults.filter(l=>l.type==='b2b');
   else if(f==='hot') list=currentResults.filter(l=>l.score>=80);
   else if(f==='warm') list=currentResults.filter(l=>l.score>=60&&l.score<80);
+  else if(f==='rfq') list=currentResults.filter(l=>l.category==='Buyer RFQ');
+  else if(f==='competitor') list=currentResults.filter(l=>l.category==='Competitor');
   renderResults(list);
 }
 
