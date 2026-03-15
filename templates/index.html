@@ -879,6 +879,7 @@ function renderRFQs(list){
         ${r.url?`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`:''}
         ${r.contact&&r.contact.includes('@')?`<a class="cab" href="mailto:${r.contact}">✉️ Email</a>`:''}
         ${r.contact?`<a class="cab cwa" href="https://wa.me/${r.contact.replace(/\D/g,'')}" target="_blank">📲 WhatsApp</a>`:''}
+        <button class="cab" onclick="saveRFQ(${JSON.stringify(r).replace(/`/g,"'")})" style="background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">💾 Save to Lead Bank</button>
       </div>
     </div>`;
   }).join('');
@@ -1146,6 +1147,55 @@ async function deleteMember(id,name){
     const r=await fetch(API+'/api/team/'+id,{method:'DELETE'});
     const d=await r.json();
     if(d.success) loadTeam();
+    else alert('Error: '+d.error);
+  }catch(e){ alert('Failed: '+e.message); }
+}
+
+async function saveRFQ(r){
+  const lead = {
+    name: r.buyer_name||'Unknown Buyer',
+    type: 'b2b',
+    category: 'Buyer RFQ',
+    country: r.country||'',
+    city: r.city||'',
+    email: r.contact_email||'',
+    phone: r.contact||'',
+    description: r.requirement||'',
+    why_good: 'RFQ from '+( r.platform||'Trade Portal')+' — Budget: '+(r.budget||'N/A'),
+    potential_value: r.budget||'',
+    score: r.match_score||60,
+    source: r.platform||'Buyer RFQ',
+    tags: ['rfq','buyer',r.urgency||''],
+    saved_by: document.getElementById('searcher-name')?document.getElementById('searcher-name').value||'Team':'Team'
+  };
+  try{
+    const r2=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+    const d=await r2.json();
+    if(d.success) alert('✅ Saved to Lead Bank!');
+    else alert('Error: '+d.error);
+  }catch(e){ alert('Failed: '+e.message); }
+}
+
+async function saveCompetitor(comp){
+  const lead = {
+    name: comp.name||'Unknown Competitor',
+    type: 'b2b',
+    category: 'Competitor',
+    country: comp.country||'',
+    website: comp.website||'',
+    instagram: comp.instagram||'',
+    description: comp.products||'',
+    why_good: 'Weakness: '+(comp.weaknesses||'')+ ' | Beat them: '+(comp.opportunity||''),
+    potential_value: comp.price_range||'',
+    score: comp.threat_level==='High'?80:comp.threat_level==='Medium'?60:40,
+    source: 'Competitor Tracker',
+    tags: ['competitor', comp.threat_level||'Medium'],
+    saved_by: document.getElementById('searcher-name')?document.getElementById('searcher-name').value||'Team':'Team'
+  };
+  try{
+    const r=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
+    const d=await r.json();
+    if(d.success) alert('✅ Saved to Lead Bank!');
     else alert('Error: '+d.error);
   }catch(e){ alert('Failed: '+e.message); }
 }
