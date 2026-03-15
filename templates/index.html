@@ -839,7 +839,7 @@ async function searchRFQs(){
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
-    renderRFQs(d.requirements||[]);
+    renderRFQs(d.results||[]);
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
@@ -1043,7 +1043,7 @@ async function trackCompetitors(){
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
     if(d.error) throw new Error(d.error);
-    renderCompetitors(d.competitors||[]);
+    renderCompetitors(d.results||[]);
   }catch(e){clearInterval(iv);loading.style.display='none';alert('Search failed: '+e.message);}
 }
 
