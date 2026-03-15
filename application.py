@@ -710,6 +710,21 @@ def logout():
 
 # ─── Buyer Requirements ───────────────────────────────────────────────────────
 
+
+
+@app.route("/api/team/<int:member_id>", methods=["DELETE"])
+def delete_team_member(member_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM team_members WHERE id=%s AND email != 'admin@silasya.com'", (member_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/buyer-requirements", methods=["POST"])
 def buyer_requirements():
     try:
