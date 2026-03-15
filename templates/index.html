@@ -343,7 +343,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
   <!-- ══ CRM PAGE ══ -->
   <div class="page" id="page-crm">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <div class="panel-title">Lead <span>Bank</span></div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">All leads saved by your team — shared in real time</div>
@@ -366,6 +366,11 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         <a href="/api/export/csv" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none">⬇ CSV</a>
         <a href="/api/export/excel" class="btn btn-outline" style="padding:8px 14px;font-size:12px;text-decoration:none;border-color:rgba(62,207,122,0.4);color:var(--green)">📊 Excel</a>
       </div>
+    </div>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
+      <button id="tab-leads" onclick="switchCRMTab('leads')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid var(--gold);color:var(--gold);cursor:pointer;margin-bottom:-2px">⚡ ALL LEADS</button>
+      <button id="tab-rfq" onclick="switchCRMTab('rfq')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">📦 BUYER RFQs</button>
+      <button id="tab-competitor" onclick="switchCRMTab('competitor')" style="padding:10px 20px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px">🎯 COMPETITORS</button>
     </div>
     <div class="panel" style="padding:0;overflow:hidden">
       <div class="leads-table-wrap">
@@ -1238,7 +1243,7 @@ async function saveRFQByIndex(i){
   try{
     const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
     const d=await res.json();
-    if(d.success){alert('✅ Saved to Lead Bank!');loadLeadBank();}
+    if(d.success){const btn=event.target;btn.textContent='✅ Saved!';btn.style.background='rgba(62,207,122,0.2)';btn.style.borderColor='rgba(62,207,122,0.4)';btn.style.color='var(--green)';btn.disabled=true;}
     else alert('Error: '+d.error);
   }catch(e){alert('Failed: '+e.message);}
 }
@@ -1264,10 +1269,40 @@ async function saveCompetitorByIndex(i){
   try{
     const res=await fetch(API+'/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)});
     const d=await res.json();
-    if(d.success){alert('✅ Saved to Lead Bank!');loadLeadBank();}
+    if(d.success){const btn=event.target;btn.textContent='✅ Saved!';btn.style.background='rgba(62,207,122,0.2)';btn.style.borderColor='rgba(62,207,122,0.4)';btn.style.color='var(--green)';btn.disabled=true;}
     else alert('Error: '+d.error);
   }catch(e){alert('Failed: '+e.message);}
 }
+
+function switchCRMTab(tab){
+  document.getElementById('tab-leads').style.borderBottomColor='transparent';
+  document.getElementById('tab-leads').style.color='var(--muted)';
+  document.getElementById('tab-rfq').style.borderBottomColor='transparent';
+  document.getElementById('tab-rfq').style.color='var(--muted)';
+  document.getElementById('tab-competitor').style.borderBottomColor='transparent';
+  document.getElementById('tab-competitor').style.color='var(--muted)';
+
+  const active = document.getElementById('tab-'+tab);
+  const color = tab==='rfq'?'var(--gold)':tab==='competitor'?'var(--accent)':'var(--gold)';
+  active.style.borderBottomColor=color;
+  active.style.color=color;
+
+  const typeEl=document.getElementById('crm-type');
+  const searchEl=document.getElementById('crm-search');
+  searchEl.value='';
+
+  if(tab==='leads'){
+    typeEl.value='';
+    document.getElementById('crm-category-filter')&&(document.getElementById('crm-category-filter').value='');
+  } else if(tab==='rfq'){
+    typeEl.value='b2b';
+  } else if(tab==='competitor'){
+    typeEl.value='b2b';
+  }
+  currentCRMTab = tab;
+  loadCRMLeads();
+}
+let currentCRMTab = 'leads';
 </script>
 
 <!-- Email Writer Modal -->
