@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lead Finder">
+<link rel="manifest" href="/manifest.json">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Silasya × Shumitra — AI Lead Finder</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -186,11 +192,13 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <span class="hbadge hb-b2b">B2B</span>
     <div class="db-dot" id="db-dot" title="Database status"></div>
     <span class="db-label" id="db-label">Connecting…</span>
+    <button id="install-btn" onclick="installApp()" style="display:none;padding:5px 13px;border:1px solid rgba(62,207,122,0.4);border-radius:8px;font-size:11px;font-weight:600;color:var(--green);background:none;cursor:pointer;margin-right:8px">📱 Install App</button>
     <a href="#" onclick="doSignOut()" style="padding:5px 13px;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</a>
   </div>
 </header>
 
 <div class="nav-tabs">
+  <div class="nav-tab" onclick="showPage('dashboard',this)">📊 Dashboard</div>
   <div class="nav-tab active" onclick="showPage('search',this)">⚡ Find Leads</div>
   <div class="nav-tab" onclick="showPage('buyers',this)">📦 Buyer RFQs</div>
   <div class="nav-tab" onclick="showPage('crm',this)">📋 Lead Bank</div>
@@ -607,6 +615,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const API = '';  // same origin
 let currentResults = [];
@@ -618,6 +627,7 @@ function showPage(id, tab) {
   document.getElementById('page-'+id).classList.add('active');
   tab.classList.add('active');
   if (id==='crm') loadCRMLeads();
+  if (id==='dashboard') loadDashboard();
   if (id==='team') loadTeam();
   if (id==='reminders') loadReminders();
 }
@@ -1069,6 +1079,7 @@ function rfqCard(r,i){
   if(r.linkedin) acts.push(`<a class="cab cli" href="${r.linkedin.startsWith('http')?r.linkedin:'https://www.linkedin.com/company/'+r.linkedin}" target="_blank">💼 LinkedIn</a>`);
   if(r.facebook) acts.push(`<a class="cab" href="${r.facebook.startsWith('http')?r.facebook:'https://facebook.com/'+r.facebook}" target="_blank">📘 Facebook</a>`);
   if(r.url) acts.push(`<a class="cab cweb" href="${r.url}" target="_blank">🔗 View RFQ</a>`);
+  acts.push(`<button class="cab" onclick="generateRFQOutreach(${i},this)" style="border-color:rgba(37,211,102,0.3);color:var(--wa);cursor:pointer">✦ AI Email</button>`);
   acts.push(`<button class="cab" onclick="saveAndRemindRFQ(${i},this)" style="border-color:rgba(201,168,76,0.3);color:var(--gold);cursor:pointer">🔔 Remind Me</button>`);
   acts.push(`<button class="cab csave" onclick="saveRFQByIndex(${i},this)" style="cursor:pointer">💾 Save</button>`);
   return `<div class="lc">
@@ -1705,13 +1716,20 @@ function renderKanban(leads){
   </div>`;
 }
 
-async function moveKanbanCard(id, status, btn){
-  btn.textContent='Moving…';
-  try{
-    await fetch(API+`/api/leads/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-    loadKanban();
-    loadStats();
-  }catch(e){alert('Failed: '+e.message);}
+function moveKanbanCard(id, status, btn){
+  const leadName = btn.closest('.kb-card').querySelector('.kb-card-name').textContent;
+  document.getElementById('move-modal-info').textContent = `Moving "${leadName}" → ${status.toUpperCase()}`;
+  document.getElementById('move-modal-note').value = '';
+  document.getElementById('move-modal').style.display = 'flex';
+  document.getElementById('move-modal-confirm').onclick = async function(){
+    const note = document.getElementById('move-modal-note').value;
+    document.getElementById('move-modal').style.display = 'none';
+    try{
+      await fetch(API+`/api/leads/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, notes:note})});
+      loadKanban();
+      loadStats();
+    }catch(e){alert('Failed: '+e.message);}
+  };
 }
 
 function showKanbanDetail(id){
@@ -1721,6 +1739,175 @@ function showKanbanDetail(id){
     const row=document.getElementById(`row-${id}`);
     if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.style.background='rgba(201,168,76,0.1)';setTimeout(()=>row.style.background='',2000);}
   },500);
+}
+
+async function generateRFQOutreach(i, btn){
+  const r = lastRFQList[i];
+  if(!r) return;
+  btn.textContent='Generating…';btn.disabled=true;
+  try{
+    const prompt = `Write a professional B2B outreach email for this buyer requirement on behalf of Shoumitra (Indian export company that supplies any product).
+Buyer: ${r.buyer_name}
+Requirement: ${r.requirement}
+Budget: ${r.budget||'Not specified'}
+Quantity: ${r.quantity||'Not specified'}
+Platform: ${r.platform||'Trade Portal'}
+Buyer Type: ${r.buyer_type||'Business'}
+
+Write:
+1. Subject line
+2. Short email (under 150 words) — friendly, professional, focused on fulfilling their requirement
+3. WhatsApp message (under 50 words)
+
+Format clearly with labels: SUBJECT:, EMAIL:, WHATSAPP:`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+    const d = await res.json();
+    const text = d.content[0].text;
+    
+    // Show in modal
+    document.getElementById('outreach-modal').classList.add('open');
+    document.getElementById('modal-lead-name').textContent = '✦ AI Outreach — ' + r.buyer_name;
+    document.getElementById('modal-body').innerHTML = text.replace(/\n/g,'<br>');
+    btn.textContent='✦ AI Email';btn.disabled=false;
+  }catch(e){
+    btn.textContent='✦ AI Email';btn.disabled=false;
+    alert('Failed: '+e.message);
+  }
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+let dashCharts = {};
+
+async function loadDashboard(){
+  try{
+    const [statsR, leadsR] = await Promise.all([
+      fetch(API+'/api/stats'),
+      fetch(API+'/api/leads?limit=500')
+    ]);
+    const stats = await statsR.json();
+    const leadsData = await leadsR.json();
+    const leads = leadsData.leads || [];
+
+    // Update stat cards
+    document.getElementById('dash-total').textContent = stats.total || 0;
+    document.getElementById('dash-hot').textContent = stats.hot || 0;
+    document.getElementById('dash-converted').textContent = stats.converted || 0;
+    document.getElementById('dash-countries').textContent = stats.countries || 0;
+
+    // Destroy old charts
+    Object.values(dashCharts).forEach(c=>c.destroy());
+    dashCharts = {};
+
+    // Status chart
+    const statusCount = {};
+    leads.forEach(l=>{ statusCount[l.status||'new'] = (statusCount[l.status||'new']||0)+1; });
+    dashCharts.status = new Chart(document.getElementById('chart-status'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(statusCount).map(s=>s.charAt(0).toUpperCase()+s.slice(1)),
+        datasets: [{
+          data: Object.values(statusCount),
+          backgroundColor: ['#888780','#c9a84c','#cf4c4c','#4c8bcf','#3ecf7a','#6e6b67'],
+          borderWidth: 0
+        }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{color:'#6e6b67',font:{size:11}}}} }
+    });
+
+    // Type chart
+    const b2b = leads.filter(l=>l.type==='b2b').length;
+    const b2c = leads.filter(l=>l.type==='b2c').length;
+    dashCharts.type = new Chart(document.getElementById('chart-type'), {
+      type: 'doughnut',
+      data: {
+        labels: ['B2B · Shoumitra', 'B2C · Silasya'],
+        datasets: [{data:[b2b,b2c], backgroundColor:['#c9a84c','#3ecf7a'], borderWidth:0}]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{color:'#6e6b67',font:{size:11}}}} }
+    });
+
+    // Countries chart
+    const countryCount = {};
+    leads.forEach(l=>{ if(l.country) countryCount[l.country]=(countryCount[l.country]||0)+1; });
+    const topCountries = Object.entries(countryCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    dashCharts.countries = new Chart(document.getElementById('chart-countries'), {
+      type: 'bar',
+      data: {
+        labels: topCountries.map(c=>c[0]),
+        datasets: [{label:'Leads', data:topCountries.map(c=>c[1]), backgroundColor:'#c9a84c', borderRadius:4}]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6e6b67',font:{size:10}}},y:{ticks:{color:'#6e6b67',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}} }
+    });
+
+    // Categories chart
+    const catCount = {};
+    leads.forEach(l=>{ if(l.category) catCount[l.category]=(catCount[l.category]||0)+1; });
+    const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    dashCharts.categories = new Chart(document.getElementById('chart-categories'), {
+      type: 'bar',
+      data: {
+        labels: topCats.map(c=>c[0].length>15?c[0].slice(0,15)+'…':c[0]),
+        datasets: [{label:'Leads', data:topCats.map(c=>c[1]), backgroundColor:'#3ecf7a', borderRadius:4}]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#6e6b67',font:{size:10}}},y:{ticks:{color:'#6e6b67',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}} }
+    });
+
+    // Follow-up tracker
+    const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000);
+    const needsFollowup = leads.filter(l=>{
+      const created = new Date(l.created_at);
+      return created < sevenDaysAgo && ['new','warm'].includes(l.status||'new');
+    });
+    const fu = document.getElementById('followup-list');
+    if(fu){
+      if(!needsFollowup.length){
+        fu.innerHTML='<div style="font-size:12px;color:var(--green)">✅ All leads followed up!</div>';
+      } else {
+        fu.innerHTML=needsFollowup.slice(0,5).map(l=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:13px;font-weight:600">${l.name}</div>
+              <div style="font-size:11px;color:var(--muted)">${l.country||''} · ${l.category||''} · Added ${new Date(l.created_at).toLocaleDateString('en-IN')}</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              ${l.email?`<a href="mailto:${l.email}" class="cab" style="font-size:11px">✉️ Email</a>`:''}
+              ${l.phone?`<a href="https://wa.me/${(l.phone||'').replace(/\D/g,'')}" target="_blank" class="cab" style="font-size:11px">📲 WhatsApp</a>`:''}
+              <button onclick="updateStatus(${l.id},'contacted');loadDashboard();" class="cab" style="font-size:11px;cursor:pointer">✓ Mark Contacted</button>
+            </div>
+          </div>`).join('')+
+          (needsFollowup.length>5?`<div style="font-size:11px;color:var(--muted);margin-top:8px">+${needsFollowup.length-5} more — check Lead Bank</div>`:'');
+      }
+    }
+  }catch(e){ console.error('Dashboard error:', e); }
+}
+
+// ── PWA Install ──────────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').style.display = 'inline-block';
+});
+async function installApp(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  if(result.outcome === 'accepted'){
+    document.getElementById('install-btn').style.display = 'none';
+  }
+  deferredPrompt = null;
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 </script>
 
@@ -1807,6 +1994,21 @@ function showKanbanDetail(id){
     <div style="display:flex;gap:10px">
       <button onclick="submitRemindModal()" class="btn btn-gold" style="flex:1">✅ Set Reminder</button>
       <button onclick="closeRemindModal()" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="move-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:400px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">Move Lead</div>
+    <div id="move-modal-info" style="font-size:12px;color:var(--muted);margin-bottom:16px"></div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">What happened? (optional note)</label>
+      <textarea id="move-modal-note" placeholder="e.g. Sent sample, waiting for response..." style="width:100%;height:80px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:none"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="move-modal-confirm" class="btn btn-gold" style="flex:1">Move →</button>
+      <button onclick="document.getElementById('move-modal').style.display='none'" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
     </div>
   </div>
 </div>
