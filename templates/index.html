@@ -867,6 +867,7 @@ function renderRFQs(list){
           <div class="lc-name">${r.buyer_name||'Unknown Buyer'}</div>
           <div class="lc-badges">
             <span class="lb lb-b2b">${r.platform||'Trade Portal'}</span>
+            ${r.buyer_type?`<span class="lb" style="background:rgba(62,207,122,0.1);color:var(--green);border:1px solid rgba(62,207,122,0.3)">${r.buyer_type}</span>`:''}
             <span class="ls">📍 ${r.country||''}${r.city?', '+r.city:''} · Posted: ${r.posted||'Recently'}</span>
           </div>
           <div style="font-size:13px;font-weight:600;color:var(--gold);margin:8px 0">📦 ${r.requirement||''}</div>
@@ -1093,6 +1094,8 @@ function renderCompetitors(list){
             ${comp.price_range?`<div class="ci">💰 Price: ${comp.price_range}</div>`:''}
             ${comp.target_market?`<div class="ci">🎯 Target: ${comp.target_market}</div>`:''}
             ${comp.monthly_revenue?`<div class="ci">📈 Revenue: ${comp.monthly_revenue}</div>`:''}
+            ${comp.selling_channels?`<div class="ci">🛒 Sells on: ${comp.selling_channels}</div>`:''}
+            ${comp.certifications?`<div class="ci">✅ Certified: ${comp.certifications}</div>`:''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;padding-left:12px">
