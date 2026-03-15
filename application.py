@@ -174,9 +174,9 @@ def ai_search():
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        prompt = f"""You are a lead generation expert for two Indian organic businesses:
-- SILASYA: B2C organic apparel, toys, home decor brand (baby products, kids toys, home decor, organic clothing)
-- SHOUMITRA: B2B export arm selling organic products worldwide (bulk export, wholesale, corporate supply)
+        prompt = f"""You are a lead generation expert for two Indian businesses:
+- SILASYA: B2C organic apparel, toys, home decor brand (baby products, kids toys, home decor, organic clothing) — focuses on organic/eco products only
+- SHOUMITRA: B2B export and supply arm — fulfills ANY demand, organic or conventional. Exports vegetables, fruits, spices, grains, medicines, Ayurvedic products, textiles, apparel, home goods, handicrafts, chemicals, raw materials — whatever the buyer needs. Shoumitra sources and supplies it. No restriction on product type.
 
 Generate 15 realistic, detailed leads based on these parameters:
 Business Focus: {business}
@@ -753,7 +753,7 @@ def buyer_requirements():
         country = data.get("country", "worldwide")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert for Silasya (organic apparel, toys, home decor) and Shoumitra (organic B2B export). Find 10 realistic buyer requirements for:
+        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian export and supply company that fulfills ANY buyer demand (organic or conventional). Shoumitra can supply: fresh vegetables, fruits, spices, grains, pulses, medicines, Ayurvedic products, organic products, textiles, apparel, home decor, handicrafts, chemicals, raw materials, processed foods, dry fruits — anything a buyer needs. Find 10 realistic buyer requirements for:
 Product Niche: {niche}
 Target Country: {country}
 
@@ -815,7 +815,11 @@ def find_competitors():
         country = data.get("country", "India")
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand (Silasya - apparel/toys/home decor, Shoumitra - B2B exports) in:
+        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for:
+- SILASYA: Indian organic B2C brand (apparel, toys, home decor)
+- SHOUMITRA: Indian B2B export/supply company that fulfills ANY demand — vegetables, fruits, spices, medicines, textiles, handicrafts, chemicals, raw materials, processed foods — organic or conventional
+
+Find competitors in:
 Product Niche: {niche}
 Country: {country}
 
