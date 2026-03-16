@@ -2253,7 +2253,15 @@ async function loadSearchHistory(){
     const d = await r.json();
     const c = document.getElementById('history-container');
     if(!d.success){ c.innerHTML='<div class="empty">Error: '+d.error+'</div>'; return; }
-    const filtered = (d.history||[]).filter(h=>h.leads_found>0);
+    // Deduplicate - keep only most recent per niche+country combo
+    const seen = new Set();
+    const filtered = (d.history||[]).filter(h=>{
+      if(h.leads_found===0) return false;
+      const key = (h.niche||'')+'|'+(h.country||'');
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     d.history = filtered;
     if(!d.history || !d.history.length){
       c.innerHTML='<div class="empty"><div class="empty-icon">🕐</div>No searches yet. Start searching for leads!</div>';
