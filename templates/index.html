@@ -2092,7 +2092,7 @@ async function loadNotifications(){
     list.innerHTML = d.notifications.map(n=>{
       const color = n.type==='success'?'var(--green)':n.type==='error'?'var(--accent)':'var(--gold)';
       const dt = new Date(n.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-      const clickAction = n.type==='success' ? "onclick="document.getElementById('notif-panel').style.display='none';notifOpen=false;showPage('crm',document.querySelector('[onclick*=crm]'))"" : '';
+      const clickAction = n.type==='success' ? "onclick='goToLeadBank()'" : '';
       return `<div ${clickAction} style="padding:10px 12px;border-radius:8px;margin-bottom:4px;background:${n.is_read?'none':'rgba(201,168,76,0.05)'};border:1px solid ${n.is_read?'transparent':'rgba(201,168,76,0.15)'};${n.type==='success'?'cursor:pointer;':''}" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='${n.is_read?'none':'rgba(201,168,76,0.05)'}'">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="font-size:12px;font-weight:600;color:${color};margin-bottom:2px">${n.title}</div>
@@ -2181,6 +2181,13 @@ async function submitRunNow(){
     result.textContent='Failed: '+e.message;
   }
   btn.textContent='🚀 Find Leads & Notify Team';btn.disabled=false;
+}
+
+function goToLeadBank(){
+  document.getElementById('notif-panel').style.display='none';
+  notifOpen=false;
+  const tab = document.querySelector('.nav-tab[onclick*="crm"]');
+  if(tab) showPage('crm', tab);
 }
 </script>
 
