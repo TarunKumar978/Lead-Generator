@@ -1902,25 +1902,109 @@ async function loadDashboard(){
   }catch(e){ console.error('Dashboard error:', e); }
 }
 
-// ── PWA Install ──────────────────────────────────────────────────────────────
+// ── PWA + Push Notifications ─────────────────────────────────────────────────
 let deferredPrompt;
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('install-btn').style.display = 'inline-block';
+  const btn = document.getElementById('install-btn');
+  if(btn) btn.style.display = 'inline-block';
 });
+
 async function installApp(){
   if(!deferredPrompt) return;
   deferredPrompt.prompt();
   const result = await deferredPrompt.userChoice;
   if(result.outcome === 'accepted'){
-    document.getElementById('install-btn').style.display = 'none';
+    const btn = document.getElementById('install-btn');
+    if(btn) btn.style.display = 'none';
   }
   deferredPrompt = null;
 }
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+async function registerPush(){
+  try{
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if(existing) return; // already subscribed
+    
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      console.log('Push notification permission denied');
+      return;
+    }
+    console.log('✅ Push notifications enabled');
+    // Store locally that this browser wants notifications
+    localStorage.setItem('push_enabled', '1');
+  }catch(e){
+    console.log('Push registration error:', e);
+  }
 }
+
+function showBrowserNotification(title, body, url){
+  if(Notification.permission === 'granted'){
+    const notif = new Notification(title, {
+      body: body,
+      icon: '/static/icon-192.png',
+      badge: '/static/icon-192.png',
+      vibrate: [200, 100, 200]
+    });
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+    };
+  }
+}
+
+// Register service worker and ask for push permission
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    console.log('SW registered');
+    // Ask for notification permission after 3 seconds
+    setTimeout(()=>{
+      if(Notification.permission === 'default'){
+        registerPush();
+      }
+    }, 3000);
+  }).catch(()=>{});
+}
+
+// Poll for new notifications every 2 minutes and show browser popup if new ones arrive
+let lastNotifCount = 0;
+async function checkForNewNotifications(){
+  try{
+    const r = await fetch(API+'/api/notifications');
+    const d = await r.json();
+    if(d.unread > lastNotifCount && lastNotifCount > 0){
+      // New notification arrived!
+      const latest = d.notifications[0];
+      if(latest && Notification.permission === 'granted'){
+        showBrowserNotification(
+          latest.title,
+          latest.message,
+          '/'
+        );
+      }
+    }
+    lastNotifCount = d.unread;
+    // Update bell badge
+    const badge = document.getElementById('notif-badge');
+    if(badge){
+      if(d.unread > 0){
+        badge.style.display='flex';
+        badge.textContent = d.unread > 9 ? '9+' : d.unread;
+      } else {
+        badge.style.display='none';
+      }
+    }
+  }catch(e){}
+}
+
+// Check every 2 minutes
+setInterval(checkForNewNotifications, 2 * 60 * 1000);
+setTimeout(checkForNewNotifications, 3000);
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 let notifOpen = false;
