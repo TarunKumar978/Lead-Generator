@@ -13,6 +13,9 @@ import anthropic
 from datetime import datetime
 from dotenv import load_dotenv
 import threading
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -972,6 +975,125 @@ Return ONLY the JSON array, no other text."""
 
 
 
+
+
+# ─── Email Notifications ──────────────────────────────────────────────────────
+
+def get_team_emails():
+    """Get all team member emails from DB"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT email, name FROM team_members WHERE email != 'admin@silasya.com'")
+        members = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return members
+    except:
+        return []
+
+def send_email_notification(subject, html_body):
+    """Send email to all team members"""
+    sender = os.getenv("MAIL_SENDER", "").strip()
+    password = os.getenv("MAIL_PASSWORD", "").strip()
+    if not sender or not password:
+        print("⚠️ Email not configured — skipping")
+        return False
+    
+    members = get_team_emails()
+    if not members:
+        print("⚠️ No team members to email")
+        return False
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender, password)
+
+        for member in members:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Silasya Lead Finder <{sender}>"
+            msg["To"] = member["email"]
+            
+            personal_html = html_body.replace("{{name}}", member["name"])
+            msg.attach(MIMEText(personal_html, "html"))
+            
+            try:
+                server.sendmail(sender, member["email"], msg.as_string())
+                print(f"✅ Email sent to {member['email']}")
+            except Exception as e:
+                print(f"❌ Failed to send to {member['email']}: {e}")
+
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"❌ Email error: {e}")
+        return False
+
+def send_new_leads_email(leads, niche, country):
+    """Send email when new leads are found"""
+    if not leads:
+        return
+    
+    leads_html = "".join([f"""
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #eee">
+        <strong style="color:#1a1a1a">{l.get('name','')}</strong><br>
+        <span style="color:#666;font-size:12px">{l.get('category','')} · {l.get('country','')}</span>
+      </td>
+      <td style="padding:10px;border-bottom:1px solid #eee;text-align:center">
+        <span style="background:{'#cf4c4c' if int(l.get('score',0))>=80 else '#c9a84c' if int(l.get('score',0))>=60 else '#888'};color:white;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700">{l.get('score','')}</span>
+      </td>
+      <td style="padding:10px;border-bottom:1px solid #eee;font-size:12px;color:#666">{l.get('potential_value','')}</td>
+      <td style="padding:10px;border-bottom:1px solid #eee;font-size:12px;color:#666">{l.get('source','')}</td>
+    </tr>
+    """ for l in leads[:10]])
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px">
+      <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden">
+        <div style="background:#0a0a0b;padding:24px;text-align:center">
+          <h1 style="color:#c9a84c;margin:0;font-size:22px">SILASYA × SHOUMITRA</h1>
+          <p style="color:#6e6b67;margin:4px 0 0;font-size:12px">AI Lead Finder</p>
+        </div>
+        <div style="padding:24px">
+          <h2 style="color:#1a1a1a;margin:0 0 8px">🤖 {len(leads)} New Leads Found!</h2>
+          <p style="color:#666;margin:0 0 20px">Auto-search found new leads for <strong>{niche}</strong> in <strong>{country}</strong></p>
+          <p style="color:#888;font-size:13px;margin:0 0 16px">Hi {{{{name}}}}, here are the latest leads:</p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="background:#f9f9f9">
+                <th style="padding:10px;text-align:left;color:#666;font-weight:600">Lead</th>
+                <th style="padding:10px;text-align:center;color:#666;font-weight:600">Score</th>
+                <th style="padding:10px;text-align:left;color:#666;font-weight:600">Value</th>
+                <th style="padding:10px;text-align:left;color:#666;font-weight:600">Source</th>
+              </tr>
+            </thead>
+            <tbody>{leads_html}</tbody>
+          </table>
+          <div style="margin-top:24px;text-align:center">
+            <a href="{os.getenv('APP_URL','https://lead-generator-production-5218.up.railway.app')}" 
+               style="background:#c9a84c;color:#0a0a0b;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
+              View All Leads →
+            </a>
+          </div>
+        </div>
+        <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:11px;color:#999">
+          You received this because you are a team member of Silasya × Shoumitra Lead Finder.<br>
+          Contact your admin to unsubscribe.
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+    
+    hot_count = len([l for l in leads if int(l.get('score',0)) >= 80])
+    subject = f"🔥 {len(leads)} New Leads Found ({hot_count} Hot!) — {niche}"
+    send_email_notification(subject, html)
+
 # ─── Notifications ────────────────────────────────────────────────────────────
 
 @app.route("/api/notifications", methods=["GET"])
@@ -1140,6 +1262,15 @@ Return ONLY the JSON array."""
                     f"Found {saved_count} new leads for '{niche}' in {country}. Check your Lead Bank!",
                     "success"
                 )
+                # Send email to team
+                saved_leads_list = []
+                conn2 = get_db()
+                cur2 = conn2.cursor(dictionary=True)
+                cur2.execute("SELECT * FROM leads ORDER BY created_at DESC LIMIT %s", (saved_count,))
+                saved_leads_list = cur2.fetchall()
+                cur2.close()
+                conn2.close()
+                send_new_leads_email(saved_leads_list, niche, country)
                 print(f"✅ Auto-search saved {saved_count} leads for {niche} in {country}")
             else:
                 print(f"ℹ️ Auto-search found no new leads for {niche} in {country}")
@@ -1148,6 +1279,101 @@ Return ONLY the JSON array."""
             print(f"❌ Auto-search error: {e}")
             add_notification("⚠️ Auto Search Error", str(e), "error")
             threading.Event().wait(60 * 60)  # Wait 1 hour on error
+
+
+
+@app.route("/api/auto-search/run", methods=["POST"])
+def manual_auto_search():
+    """Admin can trigger auto-search manually"""
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        if not api_key or not api_key.startswith("sk-ant-"):
+            return jsonify({"error": "API key not configured"}), 500
+
+        data = request.get_json() or {}
+        niche = data.get("niche", "Organic Apparel / Clothing")
+        country = data.get("country", "India")
+
+        client = anthropic.Anthropic(api_key=api_key)
+        prompt = f"""You are a lead generation expert for Silasya (organic B2C) and Shoumitra (B2B export).
+Find 5 fresh, realistic leads for:
+Niche: {niche}
+Country: {country}
+
+Return ONLY a valid JSON array with 5 leads. Each must have:
+- name, type (b2c/b2b), category, country, city, email, phone, website, description, why_good, potential_value, score (1-100), tags (array), source
+Return ONLY the JSON array."""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        raw = message.content[0].text.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.find("[")
+        end = raw.rfind("]")
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
+
+        leads = json.loads(raw)
+        saved_count = 0
+        saved_leads = []
+
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        for lead in leads:
+            name = lead.get("name") or "Unknown"
+            email = lead.get("email", "")
+            country_val = lead.get("country", "")
+
+            if email:
+                cursor.execute("SELECT id FROM leads WHERE email=%s", (email,))
+                if cursor.fetchone():
+                    continue
+            cursor.execute("SELECT id FROM leads WHERE name=%s AND country=%s", (name, country_val))
+            if cursor.fetchone():
+                continue
+
+            tags = lead.get("tags", [])
+            if isinstance(tags, list):
+                tags = json.dumps(tags)
+
+            cursor.execute("""
+                INSERT INTO leads (name, type, category, country, city, email, phone,
+                    website, description, why_good, potential_value, tags, score,
+                    status, source, saved_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                name, lead.get("type","b2b"), lead.get("category",""),
+                country_val, lead.get("city",""), email,
+                lead.get("phone",""), lead.get("website",""),
+                lead.get("description",""), lead.get("why_good",""),
+                lead.get("potential_value",""), tags,
+                int(lead.get("score",50)), "new",
+                lead.get("source","Manual Search"), "Admin"
+            ))
+            saved_count += 1
+            lead["id"] = cursor.lastrowid
+            saved_leads.append(lead)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if saved_count > 0:
+            add_notification(
+                f"▶️ Manual Search Found {saved_count} New Leads!",
+                f"Admin triggered search found {saved_count} new leads for '{niche}' in {country}.",
+                "success"
+            )
+            send_new_leads_email(saved_leads, niche, country)
+
+        return jsonify({"success": True, "saved": saved_count, "leads": saved_leads})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 

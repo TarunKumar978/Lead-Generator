@@ -1983,6 +1983,57 @@ setInterval(loadNotifications, 5 * 60 * 1000);
 
 // Load on startup
 setTimeout(loadNotifications, 2000);
+
+function showEmailSetup(){
+  document.getElementById('email-setup-modal').style.display='flex';
+}
+
+function runAutoSearchNow(){
+  document.getElementById('run-now-modal').style.display='flex';
+  document.getElementById('run-now-result').style.display='none';
+}
+
+async function submitRunNow(){
+  const btn = document.getElementById('run-now-submit');
+  const result = document.getElementById('run-now-result');
+  const niche = document.getElementById('run-niche').value;
+  const country = document.getElementById('run-country').value || 'India';
+  
+  btn.textContent='🔍 Searching…';btn.disabled=true;
+  result.style.display='none';
+  
+  try{
+    const r = await fetchWithTimeout(API+'/api/auto-search/run',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({niche, country})
+    }, 60000);
+    const d = await r.json();
+    
+    if(d.success){
+      result.style.display='block';
+      result.style.color='var(--green)';
+      if(d.saved > 0){
+        result.textContent=`✅ Found and saved ${d.saved} new leads! Team notified by email.`;
+      } else {
+        result.textContent=`ℹ️ No new leads found (all already in Lead Bank).`;
+        result.style.color='var(--muted)';
+      }
+      loadStats();
+      loadNotifications();
+      setTimeout(()=>{ document.getElementById('run-now-modal').style.display='none'; }, 3000);
+    } else {
+      result.style.display='block';
+      result.style.color='var(--accent)';
+      result.textContent='Error: '+d.error;
+    }
+  }catch(e){
+    result.style.display='block';
+    result.style.color='var(--accent)';
+    result.textContent='Failed: '+e.message;
+  }
+  btn.textContent='🚀 Find Leads & Notify Team';btn.disabled=false;
+}
 </script>
 
 <!-- Email Writer Modal -->
@@ -2084,6 +2135,57 @@ setTimeout(loadNotifications, 2000);
       <button id="move-modal-confirm" class="btn btn-gold" style="flex:1">Move →</button>
       <button onclick="document.getElementById('move-modal').style.display='none'" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
     </div>
+  </div>
+</div>
+
+<div id="email-setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:480px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">📧 Email Notification Setup</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Add these variables in Railway → Variables to enable email notifications</div>
+    <div style="background:var(--surface);border-radius:8px;padding:14px;font-size:12px;font-family:monospace;color:var(--text);margin-bottom:16px;line-height:2">
+      <div><span style="color:var(--gold)">MAIL_SENDER</span> = yourname@gmail.com</div>
+      <div><span style="color:var(--gold)">MAIL_PASSWORD</span> = xxxx xxxx xxxx xxxx</div>
+      <div><span style="color:var(--gold)">APP_URL</span> = https://your-app.railway.app</div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">
+      <strong style="color:var(--text)">How to get Gmail App Password:</strong><br>
+      1. Go to myaccount.google.com → Security<br>
+      2. Turn on 2-Step Verification<br>
+      3. Search "App Passwords" → Create one for "Mail"<br>
+      4. Copy the 16-character password
+    </div>
+    <div style="font-size:12px;color:var(--green);margin-bottom:20px">✅ Team members added in the Team tab will automatically receive emails</div>
+    <button onclick="document.getElementById('email-setup-modal').style.display='none'" class="btn btn-gold" style="width:100%">Got it!</button>
+  </div>
+</div>
+
+<!-- Run Now Modal -->
+<div id="run-now-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:420px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">▶️ Run Lead Search Now</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Find new leads instantly and notify your team</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Product Niche</label>
+      <select id="run-niche" style="width:100%">
+        <option>Organic Apparel / Clothing</option>
+        <option>Home Décor / Sustainable Living</option>
+        <option>Organic Toys / Kids</option>
+        <option>Organic Gift Sets / Lifestyle</option>
+        <option>Fresh Vegetables / Fruits</option>
+        <option>Spices / Condiments</option>
+        <option>Handcrafted / Artisan Export</option>
+        <option>Medicines / Ayurvedic Products</option>
+      </select>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Target Country</label>
+      <input id="run-country" placeholder="e.g. India, Germany, USA" value="India">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="submitRunNow()" class="btn btn-gold" style="flex:1" id="run-now-submit">🚀 Find Leads & Notify Team</button>
+      <button onclick="document.getElementById('run-now-modal').style.display='none'" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
+    </div>
+    <div id="run-now-result" style="margin-top:14px;font-size:12px;display:none"></div>
   </div>
 </div>
 </body>
