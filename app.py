@@ -1031,6 +1031,30 @@ def get_notifications():
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS contact_log (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                lead_id INT,
+                channel VARCHAR(50) DEFAULT 'email',
+                outcome VARCHAR(50) DEFAULT 'no_response',
+                notes TEXT,
+                contacted_by VARCHAR(100),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS saved_searches (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255),
+                business VARCHAR(50),
+                niche VARCHAR(255),
+                country VARCHAR(255),
+                lead_type VARCHAR(100),
+                keywords TEXT,
+                saved_by VARCHAR(100),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
         # Create table if not exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS notifications (
