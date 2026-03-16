@@ -1033,7 +1033,9 @@ def send_email_notification(subject, html_body):
         return True
     except Exception as e:
         print(f"❌ Email error: {e}")
-        return False
+        import traceback
+        traceback.print_exc()
+        return False, str(e)
 
 def send_new_leads_email(leads, niche, country):
     """Send email when new leads are found"""
@@ -1406,16 +1408,39 @@ def test_email():
         if not members:
             return jsonify({"error": "No team members found in Team tab"})
             
-        result = send_email_notification(
-            "🧪 Test Email from Silasya Lead Finder",
-            "<h2>Test email working!</h2><p>Hi {{name}}, your email notifications are set up correctly.</p>"
-        )
-        return jsonify({
-            "success": result,
-            "sender": sender,
-            "recipients": [m["email"] for m in members],
-            "message": "Email sent!" if result else "Email failed - check Railway logs"
-        })
+        import smtplib
+        # Test SMTP connection directly
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+            server.starttls()
+            server.login(sender, password)
+            server.quit()
+            smtp_ok = True
+            smtp_error = None
+        except Exception as smtp_e:
+            smtp_ok = False
+            smtp_error = str(smtp_e)
+            
+        if smtp_ok:
+            result = send_email_notification(
+                "🧪 Test Email from Silasya Lead Finder",
+                "<h2>Test email working!</h2><p>Hi {{name}}, your email notifications are set up correctly.</p>"
+            )
+            return jsonify({
+                "success": result,
+                "smtp": "connected",
+                "sender": sender,
+                "recipients": [m["email"] for m in members],
+                "message": "Email sent!" if result else "Email failed"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "smtp": "failed",
+                "smtp_error": smtp_error,
+                "sender": sender,
+                "hint": "Check MAIL_PASSWORD - must be Gmail App Password not regular password"
+            })
     except Exception as e:
         return jsonify({"error": str(e)})
 
