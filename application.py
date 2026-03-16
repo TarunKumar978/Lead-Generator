@@ -19,15 +19,46 @@ _cache = {}
 CACHE_TTL = 86400  # 24 hours
 
 def cache_get(key):
+    # Try memory first
     if key in _cache:
         data, ts = _cache[key]
         if time.time() - ts < CACHE_TTL:
             return data
         del _cache[key]
+    # Try DB cache
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT data, created_at FROM search_cache WHERE cache_key=%s", (key,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row:
+            import datetime
+            age = (datetime.datetime.now() - row['created_at']).total_seconds()
+            if age < CACHE_TTL:
+                data = json.loads(row['data'])
+                _cache[key] = (data, time.time())
+                return data
+    except:
+        pass
     return None
 
 def cache_set(key, data):
     _cache[key] = (data, time.time())
+    # Also save to DB
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO search_cache (cache_key, data) VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE data=%s, created_at=NOW()
+        """, (key, json.dumps(data), json.dumps(data)))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except:
+        pass
 
 def make_key(*args):
     return hashlib.md5("|".join(str(a).lower().strip() for a in args).encode()).hexdigest()
@@ -1334,3 +1365,10 @@ if __name__ == "__main__":
     auto_thread.start()
     print("🤖 Auto-search started (every 6 hours)")
     app.run(host="0.0.0.0", port=port, debug=debug)
+
+
+@app.route("/api/cache/clear", methods=["POST"])
+def clear_cache():
+    global _cache
+    _cache = {}
+    return jsonify({"success": True, "message": "Cache cleared"})
