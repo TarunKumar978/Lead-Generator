@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, session, Response
 from flask_cors import CORS
+import requests
 import mysql.connector
 from mysql.connector import pooling
 import os
