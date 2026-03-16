@@ -1391,6 +1391,34 @@ Return ONLY the JSON array."""
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/api/test-email", methods=["POST"])
+def test_email():
+    try:
+        sender = os.getenv("MAIL_SENDER", "").strip()
+        password = os.getenv("MAIL_PASSWORD", "").strip()
+        members = get_team_emails()
+        
+        if not sender:
+            return jsonify({"error": "MAIL_SENDER not set in Railway Variables"})
+        if not password:
+            return jsonify({"error": "MAIL_PASSWORD not set in Railway Variables"})
+        if not members:
+            return jsonify({"error": "No team members found in Team tab"})
+            
+        result = send_email_notification(
+            "🧪 Test Email from Silasya Lead Finder",
+            "<h2>Test email working!</h2><p>Hi {{name}}, your email notifications are set up correctly.</p>"
+        )
+        return jsonify({
+            "success": result,
+            "sender": sender,
+            "recipients": [m["email"] for m in members],
+            "message": "Email sent!" if result else "Email failed - check Railway logs"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
