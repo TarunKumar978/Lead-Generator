@@ -831,7 +831,11 @@ def buyer_requirements():
             return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian B2B export company specializing in: Spices & condiments, Ayurvedic & herbal products, Textiles & fabrics, Handcrafted & artisan goods, Dry fruits & nuts, Processed & packaged foods, Leather & jute products, Ceramics & pottery, Pharma & supplements, Chemicals & raw materials. NOTE: No fresh fruits, vegetables, dairy or perishable items. Find 10 realistic buyer requirements for:
+        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian B2B export company specializing in Indian arts, crafts and goods:
+ARTS & CRAFTS: Folk paintings (Madhubani, Warli, Pattachitra, Gond), wooden handicrafts, marble/stone crafts, brass/copper/Dhokra metalwork, blue pottery, paper mache, tribal art, Kundan/Meenakari jewellery
+TEXTILES: Embroidery/Zari/Zardozi, block print/batik/tie-dye, Banarasi/Kanjivaram silk sarees, handloom carpets/durries, leather crafts/Mojari
+FOOD & WELLNESS: Spices, Ayurvedic products, dry fruits, processed foods
+NOTE: No fresh produce, dairy or perishables. Find 10 realistic buyer requirements for:
 Business Focus: {business}
 Product Niche: {niche}
 Target Country: {country}
