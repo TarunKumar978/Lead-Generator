@@ -1143,7 +1143,7 @@ async function searchRFQs(){
   loading.style.display='block';
   let p=0; const iv=setInterval(()=>{p=Math.min(p+3,90);bar.style.width=p+'%';},400);
   try{
-    const r=await fetchWithTimeout(API+'/api/buyer-requirements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country,business,buyer_type,keywords})});
+    const r=await fetchWithTimeout(API+'/api/buyer-requirements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country,business,comp_type,keywords})});
     const d=await r.json();
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
@@ -1386,7 +1386,7 @@ async function trackCompetitors(){
   loading.style.display='block';
   let p=0; const iv=setInterval(()=>{p=Math.min(p+2,90);bar.style.width=p+'%';},500);
   try{
-    const r=await fetchWithTimeout(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country,business,buyer_type,keywords})});
+    const r=await fetchWithTimeout(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,country,business,comp_type,keywords})});
     const d=await r.json();
     clearInterval(iv); bar.style.width='100%';
     setTimeout(()=>{loading.style.display='none';},400);
