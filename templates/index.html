@@ -220,6 +220,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <div class="nav-tab" onclick="showPage('reminders',this)">🔔 Reminders</div>
   <div class="nav-tab" onclick="showPage('competitors',this)">🎯 Competitors</div>
   <div class="nav-tab" onclick="showPage('team',this)">👥 Team</div>
+  <div class="nav-tab" onclick="showPage('history',this)">🕐 History</div>
 </div>
 
 <div class="wrap">
@@ -703,6 +704,16 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 </div>
 
+
+  <!-- ══ SEARCH HISTORY PAGE ══ -->
+  <div class="page" id="page-history">
+    <div class="panel-title" style="margin-bottom:4px">Search <span style="color:var(--gold)">History</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:22px">All searches by your team — click any to repeat it</div>
+    <div id="history-container">
+      <div class="empty"><div class="empty-icon">🕐</div>Loading history…</div>
+    </div>
+  </div>
+
 <!-- Outreach Modal -->
 <div class="modal-bg" id="outreach-modal">
   <div class="modal">
@@ -731,6 +742,7 @@ function showPage(id, tab) {
   if (id==='dashboard') loadDashboard();
   if (id==='team') loadTeam();
   if (id==='reminders') loadReminders();
+  if (id==='history') loadSearchHistory();
 }
 
 // ── DB Status ────────────────────────────────────────────────────────────────
@@ -2231,6 +2243,78 @@ function scoreExplanation(l){
   if(l.phone) reasons.push("Has phone");
   if(l.website) reasons.push("Has website");
   return "Score: "+l.score+"/100\n"+reasons.join(", ");
+}
+
+// ── Search History ────────────────────────────────────────────────────────────
+async function loadSearchHistory(){
+  try{
+    const r = await fetch(API+'/api/search-history');
+    const d = await r.json();
+    const c = document.getElementById('history-container');
+    if(!d.history || !d.history.length){
+      c.innerHTML='<div class="empty"><div class="empty-icon">🕐</div>No searches yet. Start searching for leads!</div>';
+      return;
+    }
+
+    // Group by date
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now()-86400000).toDateString();
+
+    c.innerHTML = d.history.map(h=>{
+      const dt = new Date(h.created_at);
+      const dateStr = dt.toDateString()===today?'Today':dt.toDateString()===yesterday?'Yesterday':dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      const timeStr = dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="lc" style="cursor:pointer" onclick="repeatSearch(${JSON.stringify(h).replace(/"/g,'&quot;')})">
+        <div class="lc-top">
+          <div style="flex:1">
+            <div class="lc-name">${h.niche||'All Categories'} — ${h.country||'Worldwide'}</div>
+            <div class="lc-badges">
+              <span class="lb lb-${h.business==='silasya'?'b2c':h.business==='shoumitra'?'b2b':'b2b'}">${h.business==='silasya'?'Silasya B2C':h.business==='shoumitra'?'Shoumitra B2B':'Both'}</span>
+              ${h.lead_type&&h.lead_type!=='all'?`<span class="lb">${h.lead_type}</span>`:''}
+              <span class="ls">🕐 ${dateStr} at ${timeStr}</span>
+              <span class="ls">👤 ${h.searched_by||'Team'}</span>
+            </div>
+            ${h.keywords?`<div class="lc-desc">Keywords: ${h.keywords}</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+            <div style="font-size:22px;font-weight:700;color:var(--gold)">${h.leads_found||0}</div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Leads Found</div>
+          </div>
+        </div>
+        <div class="ca">
+          <button class="cab" onclick="event.stopPropagation();repeatSearch(${JSON.stringify(h).replace(/"/g,'&quot;')})" style="cursor:pointer">🔄 Repeat Search</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ console.error(e); }
+}
+
+function repeatSearch(h){
+  // Switch to Find Leads tab and prefill the form
+  const tab = document.querySelector('.nav-tab[onclick*="search"]');
+  if(tab) showPage('search', tab);
+  
+  setTimeout(()=>{
+    // Fill in the form fields
+    const businessEl = document.getElementById('s-business');
+    const nicheEl = document.getElementById('s-niche');
+    const countryEl = document.getElementById('s-country');
+    const keywordsEl = document.getElementById('s-keywords');
+    
+    if(businessEl) businessEl.value = h.business||'both';
+    if(nicheEl){
+      // Try to match the niche
+      for(let opt of nicheEl.options){
+        if(opt.value === h.niche) { nicheEl.value = h.niche; break; }
+      }
+    }
+    if(countryEl) countryEl.value = h.country||'';
+    if(keywordsEl) keywordsEl.value = h.keywords||'';
+    
+    // Scroll to search button
+    const btn = document.querySelector('.btn-gold[onclick*="findLeads"]');
+    if(btn) btn.scrollIntoView({behavior:'smooth'});
+  }, 300);
 }
 </script>
 
