@@ -1429,3 +1429,80 @@ def delete_saved_search(search_id):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/contact-log", methods=["GET"])
+def get_contact_log():
+    try:
+        lead_id = request.args.get("lead_id")
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        if lead_id:
+            cursor.execute("""
+                SELECT cl.*, l.name as lead_name 
+                FROM contact_log cl
+                LEFT JOIN leads l ON cl.lead_id = l.id
+                WHERE cl.lead_id = %s
+                ORDER BY cl.created_at DESC
+            """, (lead_id,))
+        else:
+            cursor.execute("""
+                SELECT cl.*, l.name as lead_name 
+                FROM contact_log cl
+                LEFT JOIN leads l ON cl.lead_id = l.id
+                ORDER BY cl.created_at DESC LIMIT 100
+            """)
+        logs = cursor.fetchall()
+        for log in logs:
+            if log.get("created_at"):
+                log["created_at"] = log["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "logs": logs})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/contact-log", methods=["POST"])
+def add_contact_log():
+    try:
+        data = request.get_json()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO contact_log (lead_id, channel, outcome, notes, contacted_by)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            data.get("lead_id"),
+            data.get("channel", "email"),
+            data.get("outcome", "no_response"),
+            data.get("notes", ""),
+            data.get("contacted_by", "Team")
+        ))
+        conn.commit()
+        log_id = cursor.lastrowid
+        # Update lead status based on outcome
+        if data.get("outcome") == "positive":
+            cursor.execute("UPDATE leads SET status='warm' WHERE id=%s AND status='new'", (data.get("lead_id"),))
+        elif data.get("outcome") == "converted":
+            cursor.execute("UPDATE leads SET status='converted' WHERE id=%s", (data.get("lead_id"),))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "id": log_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/contact-log/<int:log_id>", methods=["DELETE"])
+def delete_contact_log(log_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM contact_log WHERE id=%s", (log_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

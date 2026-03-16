@@ -2384,6 +2384,73 @@ async function deleteSavedSearch(id){
   await fetch(API+`/api/saved-searches/${id}`, {method:'DELETE'});
   loadSavedSearches();
 }
+
+let currentContactLeadId = null;
+
+function openContactLog(leadId, leadName){
+  currentContactLeadId = leadId;
+  document.getElementById('contact-log-lead-name').textContent = leadName;
+  document.getElementById('contact-log-modal').style.display = 'flex';
+  document.getElementById('cl-notes').value = '';
+  loadContactLogHistory(leadId);
+}
+
+async function loadContactLogHistory(leadId){
+  const c = document.getElementById('contact-log-history');
+  try{
+    const r = await fetch(API+`/api/contact-log?lead_id=${leadId}`);
+    const d = await r.json();
+    if(!d.logs || !d.logs.length){
+      c.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">No contact history yet. Log your first contact above!</div>';
+      return;
+    }
+    const channelIcon = {email:'✉️',whatsapp:'📲',call:'📞',linkedin:'💼',instagram:'📸',meeting:'🤝'};
+    const outcomeColor = {no_response:'var(--muted)',positive:'var(--green)',negative:'var(--accent)',callback:'var(--gold)',converted:'var(--green)'};
+    const outcomeLabel = {no_response:'No Response',positive:'Positive ✅',negative:'Not Interested ❌',callback:'Callback 📅',converted:'Converted! 🎉'};
+    c.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em">Contact History</div>' +
+      d.logs.map(l=>{
+        const dt = new Date(l.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        return `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:20px;flex-shrink:0">${channelIcon[l.channel]||'📱'}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:600;color:${outcomeColor[l.outcome]||'var(--text)'}">${outcomeLabel[l.outcome]||l.outcome}</span>
+              <span style="font-size:10px;color:var(--muted)">${dt}</span>
+              <span style="font-size:10px;color:var(--muted)">by ${l.contacted_by||'Team'}</span>
+            </div>
+            ${l.notes?`<div style="font-size:12px;color:var(--muted)">${l.notes}</div>`:''}
+          </div>
+          <button onclick="deleteContactLog(${l.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px">✕</button>
+        </div>`;
+      }).join('');
+  }catch(e){ c.innerHTML = '<div style="color:var(--accent);font-size:12px">Error loading history</div>'; }
+}
+
+async function submitContactLog(){
+  if(!currentContactLeadId) return;
+  const channel = document.getElementById('cl-channel').value;
+  const outcome = document.getElementById('cl-outcome').value;
+  const notes = document.getElementById('cl-notes').value;
+  try{
+    const r = await fetch(API+'/api/contact-log',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lead_id:currentContactLeadId, channel, outcome, notes, contacted_by:'Team'})
+    });
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('cl-notes').value='';
+      loadContactLogHistory(currentContactLeadId);
+      loadCRMLeads();
+      loadStats();
+    }
+  }catch(e){ alert('Failed: '+e.message); }
+}
+
+async function deleteContactLog(id){
+  await fetch(API+`/api/contact-log/${id}`,{method:'DELETE'});
+  loadContactLogHistory(currentContactLeadId);
+}
 </script>
 
 <!-- Email Writer Modal -->
@@ -2536,6 +2603,55 @@ async function deleteSavedSearch(id){
       <button onclick="document.getElementById('run-now-modal').style.display='none'" class="btn btn-outline" style="padding:10px 20px">Cancel</button>
     </div>
     <div id="run-now-result" style="margin-top:14px;font-size:12px;display:none"></div>
+  </div>
+</div>
+
+<!-- Contact Log Modal -->
+<div id="contact-log-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:560px;margin-bottom:40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-size:15px;font-weight:700">📞 Contact Log</div>
+        <div id="contact-log-lead-name" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button onclick="document.getElementById('contact-log-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <!-- Add new log -->
+    <div style="background:var(--surface);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">Log New Contact</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Channel</label>
+          <select id="cl-channel" style="width:100%;margin-top:4px">
+            <option value="email">✉️ Email</option>
+            <option value="whatsapp">📲 WhatsApp</option>
+            <option value="call">📞 Phone Call</option>
+            <option value="linkedin">💼 LinkedIn</option>
+            <option value="instagram">📸 Instagram</option>
+            <option value="meeting">🤝 Meeting</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Outcome</label>
+          <select id="cl-outcome" style="width:100%;margin-top:4px">
+            <option value="no_response">No Response</option>
+            <option value="positive">Positive Response ✅</option>
+            <option value="negative">Not Interested ❌</option>
+            <option value="callback">Requested Callback 📅</option>
+            <option value="converted">Converted! 🎉</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Notes</label>
+        <input id="cl-notes" placeholder="What happened? What did they say?" style="width:100%;margin-top:4px">
+      </div>
+      <button onclick="submitContactLog()" class="btn btn-gold" style="width:100%;padding:10px">+ Log This Contact</button>
+    </div>
+    <!-- History -->
+    <div id="contact-log-history">
+      <div style="font-size:12px;color:var(--muted)">Loading history…</div>
+    </div>
   </div>
 </div>
 </body>
