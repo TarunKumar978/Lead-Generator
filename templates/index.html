@@ -2451,6 +2451,50 @@ async function deleteContactLog(id){
   await fetch(API+`/api/contact-log/${id}`,{method:'DELETE'});
   loadContactLogHistory(currentContactLeadId);
 }
+
+function shareViaWhatsApp(i){
+  const l = currentResults[i];
+  if(!l) return;
+  const msg = `🌟 *New Lead Found — Silasya × Shoumitra*
+
+*${l.name}*
+📍 ${l.city||''} ${l.country||''}
+🏷️ ${l.category||''}
+💰 ${l.potential_value||''}
+⭐ Score: ${l.score}/100
+
+*Why Good:* ${l.why_good||''}
+
+${l.website?'🌐 '+l.website:''}
+${l.email?'✉️ '+l.email:''}
+${l.phone?'📞 '+l.phone:''}
+
+_Found via Silasya × Shoumitra AI Lead Finder_`;
+
+  const encoded = encodeURIComponent(msg);
+  window.open('https://wa.me/?text='+encoded, '_blank');
+}
+
+function shareLeadViaWhatsApp(l){
+  const msg = `🌟 *Lead — Silasya × Shoumitra*
+
+*${l.name}*
+📍 ${l.city||''} ${l.country||''}
+🏷️ ${l.category||''}
+💰 ${l.potential_value||''}
+⭐ Score: ${l.score}/100
+
+${l.description||''}
+
+${l.website?'🌐 '+l.website:''}
+${l.email?'✉️ '+l.email:''}
+${l.phone?'📞 '+l.phone:''}
+
+_Silasya × Shoumitra AI Lead Finder_`;
+
+  const encoded = encodeURIComponent(msg);
+  window.open('https://wa.me/?text='+encoded, '_blank');
+}
 </script>
 
 <!-- Email Writer Modal -->
