@@ -1301,6 +1301,10 @@ def test_email():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/version")
+def version():
+    return jsonify({"version": "2.0", "search_history": "enabled"})
+
 @app.route("/api/search-history", methods=["GET"])
 def get_search_history():
     try:
