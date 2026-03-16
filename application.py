@@ -1381,54 +1381,25 @@ Return ONLY the JSON array."""
 @app.route("/api/test-email", methods=["POST"])
 def test_email():
     try:
-        sender = os.getenv("MAIL_SENDER", "").strip()
-        password = os.getenv("MAIL_PASSWORD", "").strip()
+        resend_key = os.getenv("RESEND_API_KEY", "").strip()
+        sender = os.getenv("MAIL_SENDER", "onboarding@resend.dev").strip()
         members = get_team_emails()
-        
-        if not sender:
-            return jsonify({"error": "MAIL_SENDER not set in Railway Variables"})
-        if not password:
-            return jsonify({"error": "MAIL_PASSWORD not set in Railway Variables"})
+        if not resend_key:
+            return jsonify({"error": "RESEND_API_KEY not set in Railway Variables"})
         if not members:
-            return jsonify({"error": "No team members found in Team tab"})
-            
-        import smtplib
-        # Test SMTP connection directly
-        try:
-            server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
-            server.starttls()
-            server.login(sender, password)
-            server.quit()
-            smtp_ok = True
-            smtp_error = None
-        except Exception as smtp_e:
-            smtp_ok = False
-            smtp_error = str(smtp_e)
-            
-        if smtp_ok:
-            result = send_email_notification(
-                "🧪 Test Email from Silasya Lead Finder",
-                "<h2>Test email working!</h2><p>Hi {{name}}, your email notifications are set up correctly.</p>"
-            )
-            return jsonify({
-                "success": result,
-                "smtp": "connected",
-                "sender": sender,
-                "recipients": [m["email"] for m in members],
-                "message": "Email sent!" if result else "Email failed"
-            })
+            return jsonify({"error": "No team members in Team tab"})
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+            json={"from": f"Silasya Lead Finder <{sender}>", "to": [members[0]["email"]], "subject": "Test Email from Silasya Lead Finder", "html": f"<h2>Test!</h2><p>Hi {members[0]['name']}, emails are working!</p>"},
+            timeout=10
+        )
+        if r.status_code in [200, 201]:
+            return jsonify({"success": True, "message": f"Email sent to {members[0]['email']}!", "all_recipients": [m["email"] for m in members]})
         else:
-            return jsonify({
-                "success": False,
-                "smtp": "failed",
-                "smtp_error": smtp_error,
-                "sender": sender,
-                "hint": "Check RESEND_API_KEY in Railway Variables - must start with re_"
-            })
+            return jsonify({"success": False, "error": r.text, "status_code": r.status_code})
     except Exception as e:
         return jsonify({"error": str(e)})
-
-# ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("🚀 Starting Silasya & Shoumitra Lead Finder...")
