@@ -9,9 +9,6 @@ import anthropic
 from datetime import datetime
 from dotenv import load_dotenv
 import threading
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -992,7 +989,7 @@ def get_team_emails():
     except:
         return []
 
-def send_email_notification(subject, html_body):
+def:
     """Send email via Resend API over HTTPS"""
     resend_key = os.getenv("RESEND_API_KEY", "").strip()
     if not resend_key:
@@ -1022,7 +1019,7 @@ def send_email_notification(subject, html_body):
             print(f"Email error: {e}")
     return success_count > 0
 
-def send_new_leads_email(leads, niche, country):
+def:
     """Send email when new leads are found"""
     if not leads:
         return
@@ -1083,7 +1080,6 @@ def send_new_leads_email(leads, niche, country):
     
     hot_count = len([l for l in leads if int(l.get('score',0)) >= 80])
     subject = f"🔥 {len(leads)} New Leads Found ({hot_count} Hot!) — {niche}"
-    send_email_notification(subject, html)
 
 # ─── Notifications ────────────────────────────────────────────────────────────
 
@@ -1265,15 +1261,6 @@ Return ONLY the JSON array."""
                     f"Found {saved_count} new leads for '{niche}' in {country}. Check your Lead Bank!",
                     "success"
                 )
-                # Send email to team
-                saved_leads_list = []
-                conn2 = get_db()
-                cur2 = conn2.cursor(dictionary=True)
-                cur2.execute("SELECT * FROM leads ORDER BY created_at DESC LIMIT %s", (saved_count,))
-                saved_leads_list = cur2.fetchall()
-                cur2.close()
-                conn2.close()
-                send_new_leads_email(saved_leads_list, niche, country)
                 print(f"✅ Auto-search saved {saved_count} leads for {niche} in {country}")
             else:
                 print(f"ℹ️ Auto-search found no new leads for {niche} in {country}")
@@ -1372,7 +1359,6 @@ Return ONLY the JSON array."""
                 f"Admin triggered search found {saved_count} new leads for '{niche}' in {country}.",
                 "success"
             )
-            send_new_leads_email(saved_leads, niche, country)
 
         return jsonify({"success": True, "saved": saved_count, "leads": saved_leads})
     except Exception as e:
