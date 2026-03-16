@@ -16,7 +16,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 /* header */
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 36px;border-bottom:1px solid var(--border);background:rgba(10,10,11,0.98);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 36px;border-bottom:1px solid var(--border);background:rgba(10,10,11,0.98);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200;position:relative}
 .brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;letter-spacing:0.08em;color:var(--gold)}
 .brand-sub{font-size:9px;letter-spacing:0.25em;color:var(--muted);text-transform:uppercase}
 .header-right{display:flex;align-items:center;gap:12px}
@@ -192,6 +192,18 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <span class="hbadge hb-b2b">B2B</span>
     <div class="db-dot" id="db-dot" title="Database status"></div>
     <span class="db-label" id="db-label">Connecting…</span>
+    <div style="position:relative;display:inline-block;margin-right:8px">
+      <button onclick="toggleNotifications()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 13px;font-size:16px;cursor:pointer;color:var(--text)">🔔</button>
+      <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">0</span>
+    </div>
+    <!-- Notification Panel -->
+    <div id="notif-panel" style="display:none;position:absolute;top:60px;right:16px;width:340px;background:var(--card);border:1px solid var(--border);border-radius:12px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-height:400px;overflow-y:auto">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;font-weight:700">Notifications</span>
+        <button onclick="markAllRead()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer">Mark all read</button>
+      </div>
+      <div id="notif-list" style="padding:8px"></div>
+    </div>
     <button id="install-btn" onclick="installApp()" style="display:none;padding:5px 13px;border:1px solid rgba(62,207,122,0.4);border-radius:8px;font-size:11px;font-weight:600;color:var(--green);background:none;cursor:pointer;margin-right:8px">📱 Install App</button>
     <a href="#" onclick="doSignOut()" style="padding:5px 13px;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</a>
   </div>
@@ -1909,6 +1921,68 @@ async function installApp(){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+let notifOpen = false;
+
+async function loadNotifications(){
+  try{
+    const r = await fetch(API+'/api/notifications');
+    const d = await r.json();
+    const badge = document.getElementById('notif-badge');
+    const list = document.getElementById('notif-list');
+    if(!badge || !list) return;
+
+    if(d.unread > 0){
+      badge.style.display = 'flex';
+      badge.textContent = d.unread > 9 ? '9+' : d.unread;
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if(!d.notifications || !d.notifications.length){
+      list.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center">No notifications yet.<br>Auto-search runs every 6 hours.</div>';
+      return;
+    }
+
+    list.innerHTML = d.notifications.map(n=>{
+      const color = n.type==='success'?'var(--green)':n.type==='error'?'var(--accent)':'var(--gold)';
+      const dt = new Date(n.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<div style="padding:10px 12px;border-radius:8px;margin-bottom:4px;background:${n.is_read?'none':'rgba(201,168,76,0.05)'};border:1px solid ${n.is_read?'transparent':'rgba(201,168,76,0.15)'}">
+        <div style="font-size:12px;font-weight:600;color:${color};margin-bottom:2px">${n.title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${n.message}</div>
+        <div style="font-size:10px;color:var(--muted)">${dt}</div>
+      </div>`;
+    }).join('');
+  }catch(e){ console.error(e); }
+}
+
+function toggleNotifications(){
+  const panel = document.getElementById('notif-panel');
+  notifOpen = !notifOpen;
+  panel.style.display = notifOpen ? 'block' : 'none';
+  if(notifOpen) loadNotifications();
+}
+
+async function markAllRead(){
+  await fetch(API+'/api/notifications/read',{method:'POST'});
+  loadNotifications();
+}
+
+// Close notifications when clicking outside
+document.addEventListener('click', e=>{
+  const panel = document.getElementById('notif-panel');
+  if(panel && notifOpen && !panel.contains(e.target) && !e.target.closest('button[onclick="toggleNotifications()"]')){
+    panel.style.display = 'none';
+    notifOpen = false;
+  }
+});
+
+// Poll for new notifications every 5 minutes
+setInterval(loadNotifications, 5 * 60 * 1000);
+
+// Load on startup
+setTimeout(loadNotifications, 2000);
 </script>
 
 <!-- Email Writer Modal -->

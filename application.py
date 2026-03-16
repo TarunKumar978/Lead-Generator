@@ -12,6 +12,8 @@ import json
 import anthropic
 from datetime import datetime
 from dotenv import load_dotenv
+import threading
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -968,6 +970,185 @@ Return ONLY the JSON array, no other text."""
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ─── Notifications ────────────────────────────────────────────────────────────
+
+@app.route("/api/notifications", methods=["GET"])
+def get_notifications():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20")
+        notifs = cursor.fetchall()
+        cursor.execute("SELECT COUNT(*) as unread FROM notifications WHERE is_read=0")
+        unread = cursor.fetchone()["unread"]
+        for n in notifs:
+            if n.get("created_at"):
+                n["created_at"] = n["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "notifications": notifs, "unread": unread})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/notifications/read", methods=["POST"])
+def mark_notifications_read():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE notifications SET is_read=1")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def add_notification(title, message, notif_type="info"):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO notifications (title, message, type) VALUES (%s,%s,%s)",
+            (title, message, notif_type)
+        )
+        # Keep only last 50 notifications
+        cursor.execute("""
+            DELETE FROM notifications WHERE id NOT IN (
+                SELECT id FROM (SELECT id FROM notifications ORDER BY created_at DESC LIMIT 50) AS tmp
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+
+# ─── Auto Search ──────────────────────────────────────────────────────────────
+
+AUTO_SEARCH_NICHES = [
+    "Organic Apparel / Clothing",
+    "Home Décor / Sustainable Living",
+    "Organic Toys / Kids",
+    "Organic Gift Sets / Lifestyle",
+    "Fresh Vegetables / Fruits",
+    "Spices / Condiments",
+]
+
+def run_auto_search():
+    """Runs every 6 hours — finds new leads and saves them automatically"""
+    while True:
+        try:
+            # Wait 6 hours
+            threading.Event().wait(6 * 60 * 60)
+
+            print("🤖 Auto-search running...")
+
+            api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+            if not api_key or not api_key.startswith("sk-ant-"):
+                print("❌ Auto-search skipped: No API key")
+                continue
+
+            # Pick a niche to search (rotate through them)
+            import random
+            niche = random.choice(AUTO_SEARCH_NICHES)
+            countries = ["India", "Germany", "USA", "UAE", "UK"]
+            country = random.choice(countries)
+
+            client = anthropic.Anthropic(api_key=api_key)
+            prompt = f"""You are a lead generation expert for Silasya (organic B2C) and Shoumitra (B2B export).
+Find 5 fresh, realistic leads for:
+Niche: {niche}
+Country: {country}
+
+Return ONLY a valid JSON array with 5 leads. Each must have:
+- name, type (b2c/b2b), category, country, city, email, phone, website, description, why_good, potential_value, score (1-100), tags (array), source
+Return ONLY the JSON array."""
+
+            message = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=3000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            raw = message.content[0].text.strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            start = raw.find("[")
+            end = raw.rfind("]")
+            if start != -1 and end != -1:
+                raw = raw[start:end+1]
+
+            leads = json.loads(raw)
+            saved_count = 0
+
+            conn = get_db()
+            cursor = conn.cursor(dictionary=True)
+
+            for lead in leads:
+                name = lead.get("name") or "Unknown"
+                email = lead.get("email", "")
+                country_val = lead.get("country", "")
+
+                # Check duplicate
+                if email:
+                    cursor.execute("SELECT id FROM leads WHERE email=%s", (email,))
+                    if cursor.fetchone():
+                        continue
+                cursor.execute("SELECT id FROM leads WHERE name=%s AND country=%s", (name, country_val))
+                if cursor.fetchone():
+                    continue
+
+                tags = lead.get("tags", [])
+                if isinstance(tags, list):
+                    tags = json.dumps(tags)
+
+                cursor.execute("""
+                    INSERT INTO leads (name, type, category, country, city, email, phone,
+                        website, description, why_good, potential_value, tags, score,
+                        status, source, saved_by)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    name, lead.get("type","b2b"), lead.get("category",""),
+                    country_val, lead.get("city",""), email,
+                    lead.get("phone",""), lead.get("website",""),
+                    lead.get("description",""), lead.get("why_good",""),
+                    lead.get("potential_value",""), tags,
+                    int(lead.get("score",50)), "new",
+                    lead.get("source","Auto Search"), "Auto Search"
+                ))
+                saved_count += 1
+
+            conn.commit()
+
+            # Log the search
+            cursor.execute(
+                "INSERT INTO auto_search_log (niche, leads_found) VALUES (%s,%s)",
+                (niche, saved_count)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            # Send notification
+            if saved_count > 0:
+                add_notification(
+                    f"🤖 Auto Search Found {saved_count} New Leads!",
+                    f"Found {saved_count} new leads for '{niche}' in {country}. Check your Lead Bank!",
+                    "success"
+                )
+                print(f"✅ Auto-search saved {saved_count} leads for {niche} in {country}")
+            else:
+                print(f"ℹ️ Auto-search found no new leads for {niche} in {country}")
+
+        except Exception as e:
+            print(f"❌ Auto-search error: {e}")
+            add_notification("⚠️ Auto Search Error", str(e), "error")
+            threading.Event().wait(60 * 60)  # Wait 1 hour on error
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -978,4 +1159,8 @@ if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
     print(f"✅ App running at http://localhost:{port}")
     print(f"📋 Share with team: http://YOUR_IP:{port}")
+    # Start auto-search background thread
+    auto_thread = threading.Thread(target=run_auto_search, daemon=True)
+    auto_thread.start()
+    print("🤖 Auto-search started (every 6 hours)")
     app.run(host="0.0.0.0", port=port, debug=debug)
