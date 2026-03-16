@@ -1083,8 +1083,8 @@ function renderCRMTable(leads){
         <div style="display:flex;gap:4px">
       <td>
         <div style="display:flex;gap:4px">
-          <button onclick="shareLeadViaWhatsAppById(${l.id})" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📲</button>
-          <button onclick="editNotes(${l.id})" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📝</button>
+          <button onclick="shareLeadViaWhatsAppById(${l.id})" title="Share via WhatsApp" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📲</button>
+          <button onclick="editNotes(${l.id})" title="${l.notes?'Edit note: '+l.notes.slice(0,30):'Add note'}" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📝${l.notes?'✓':''}</button>
           <button onclick="openContactLog(${l.id},'${(l.name||``).replace(/'/g,``).replace(/"/g,``)}')" style="background:rgba(62,207,122,0.1);border:1px solid rgba(62,207,122,0.2);color:var(--green);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📞</button>
           <button class="btn btn-red" style="padding:3px 7px;font-size:10px" onclick="deleteLead(${l.id})">✕</button>
         </div>
