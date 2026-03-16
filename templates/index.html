@@ -2485,11 +2485,13 @@ _Found via Silasya × Shoumitra AI Lead Finder_`;
   window.open('https://wa.me/?text='+encoded, '_blank');
 }
 
-function shareLeadViaWhatsAppById(id){
-  const row = document.getElementById(`row-${id}`);
-  const name = row?.querySelector('td:nth-child(2)')?.textContent || '';
-  const l = {name, id};
-  shareLeadViaWhatsApp(l);
+async function shareLeadViaWhatsAppById(id){
+  try{
+    const r = await fetch(API+`/api/leads?limit=500`);
+    const d = await r.json();
+    const l = (d.leads||[]).find(x=>x.id===id);
+    if(l) shareLeadViaWhatsApp(l);
+  }catch(e){ alert('Failed to load lead data'); }
 }
 function shareLeadViaWhatsApp(l){
   const msg = `🌟 *Lead — Silasya × Shoumitra*
