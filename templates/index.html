@@ -1043,11 +1043,13 @@ function renderCRMTable(leads){
   const statusCls={'hot':'sp-hot','warm':'sp-warm','new':'sp-new','contacted':'sp-contacted','converted':'sp-converted'};
   body.innerHTML=leads.map(l=>{
     const soc=[];
+    if(l.website) soc.push(`<a href="${l.website.startsWith('http')?l.website:'https://'+l.website}" target="_blank" style="font-size:14px;text-decoration:none" title="Website">🌐</a>`);
     if(l.whatsapp||l.phone){const wn=(l.phone||l.whatsapp||'').replace(/\D/g,'');soc.push(`<a href="https://wa.me/${wn}" target="_blank" style="font-size:14px;text-decoration:none" title="WhatsApp">📲</a>`);}
+    if(l.phone) soc.push(`<a href="tel:${l.phone}" style="font-size:14px;text-decoration:none" title="Call">📞</a>`);
+    if(l.email) soc.push(`<a href="mailto:${l.email}" style="font-size:14px;text-decoration:none" title="Email">✉️</a>`);
     if(l.instagram) soc.push(`<a href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank" style="font-size:14px;text-decoration:none" title="Instagram">📸</a>`);
     if(l.facebook) soc.push(`<a href="${l.facebook.startsWith('http')?l.facebook:'https://facebook.com/'+l.facebook}" target="_blank" style="font-size:14px;text-decoration:none" title="Facebook">👤</a>`);
     if(l.linkedin) soc.push(`<a href="${l.linkedin.startsWith('http')?l.linkedin:'https://linkedin.com/in/'+l.linkedin}" target="_blank" style="font-size:14px;text-decoration:none" title="LinkedIn">💼</a>`);
-    if(l.email) soc.push(`<a href="mailto:${l.email}" style="font-size:14px;text-decoration:none" title="Email">✉️</a>`);
     const date=l.created_at?new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'—';
     return `<tr id="row-${l.id}">
       <td><input type="checkbox" class="lead-cb" data-id="${l.id}" onclick="updateBulkToolbar()" style="cursor:pointer"></td>
