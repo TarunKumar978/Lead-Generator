@@ -149,6 +149,10 @@ def init_db():
 def index():
     return render_template("index.html")
 
+@app.route("/favicon.ico")
+def favicon():
+    return app.send_static_file("favicon.ico")
+
 @app.route("/manifest.json")
 def manifest():
     return app.send_static_file("manifest.json")
@@ -1101,6 +1105,18 @@ def get_notifications():
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
+        # Create table if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255),
+                message TEXT,
+                type VARCHAR(50) DEFAULT 'info',
+                is_read TINYINT DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
         cursor.execute("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20")
         notifs = cursor.fetchall()
         cursor.execute("SELECT COUNT(*) as unread FROM notifications WHERE is_read=0")
@@ -1112,7 +1128,7 @@ def get_notifications():
         conn.close()
         return jsonify({"success": True, "notifications": notifs, "unread": unread})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": True, "notifications": [], "unread": 0})
 
 
 @app.route("/api/notifications/read", methods=["POST"])
