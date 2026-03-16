@@ -42,7 +42,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .kb-card-val{font-size:11px;color:var(--gold)}
 .kb-count{font-size:10px;color:var(--muted);margin-left:6px}
 /* layout */
-.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 20px 80px}
 .page{display:none;padding-top:0}.page.active{display:block;animation:fadeUp 0.3s ease;padding-top:0}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 /* cards / inputs */
@@ -177,7 +177,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .role-badge{padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
 /* responsive */
 @media(max-width:700px){
-  header{padding:12px 16px}.nav-tabs{padding:0 16px}.wrap{padding:18px 12px 60px}
+  header{padding:12px 16px}.nav-tabs{padding:0 16px}.wrap{padding:12px 12px 60px}
   .stats-row{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}
   .lc-top{flex-direction:column}
 }
@@ -706,7 +706,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 
   <!-- ══ SEARCH HISTORY PAGE ══ -->
-  <div class="page" id="page-history" style="margin-top:-28px">
+  <div class="page" id="page-history">
     <div class="panel-title" style="margin-bottom:4px;margin-top:0">Search <span style="color:var(--gold)">History</span></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:22px">All searches by your team — click any to repeat it</div>
     <div id="history-container">
