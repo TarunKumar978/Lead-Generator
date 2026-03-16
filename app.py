@@ -1,10 +1,6 @@
-"""
-Silasya & Shoumitra — AI Lead Finder
-Flask + MySQL Backend
-"""
-
 from flask import Flask, request, jsonify, render_template, session, Response
 from flask_cors import CORS
+import requests
 import mysql.connector
 from mysql.connector import pooling
 import os
@@ -12,8 +8,29 @@ import json
 import anthropic
 from datetime import datetime
 from dotenv import load_dotenv
+import threading
+from datetime import datetime, timedelta
 
 load_dotenv()
+
+# ─── Simple In-Memory Cache ───────────────────────────────────────────────────
+import hashlib, time
+_cache = {}
+CACHE_TTL = 86400  # 24 hours
+
+def cache_get(key):
+    if key in _cache:
+        data, ts = _cache[key]
+        if time.time() - ts < CACHE_TTL:
+            return data
+        del _cache[key]
+    return None
+
+def cache_set(key, data):
+    _cache[key] = (data, time.time())
+
+def make_key(*args):
+    return hashlib.md5("|".join(str(a).lower().strip() for a in args).encode()).hexdigest()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "silasya-secret-2025")
@@ -125,6 +142,18 @@ def init_db():
 def index():
     return render_template("index.html")
 
+@app.route("/favicon.ico")
+def favicon():
+    return app.send_static_file("favicon.ico")
+
+@app.route("/manifest.json")
+def manifest():
+    return app.send_static_file("manifest.json")
+
+@app.route("/sw.js")
+def sw():
+    return app.send_static_file("sw.js")
+
 
 @app.route("/api/status")
 def status():
@@ -172,13 +201,19 @@ def ai_search():
         cursor.close()
         conn.close()
 
+        # Check cache first
+        cache_key = make_key("leads", business, country, niche, lead_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "leads": cached, "count": len(cached), "cached": True})
+
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        prompt = f"""You are a lead generation expert for two Indian organic businesses:
-- SILASYA: B2C organic apparel, toys, home decor brand
-- SHOUMITRA: B2B export arm selling organic products worldwide
+        prompt = f"""You are a lead generation expert for two Indian businesses:
+- SILASYA: B2C organic apparel, toys, home decor brand (baby products, kids toys, home decor, organic clothing) — focuses on organic/eco products only
+- SHOUMITRA: B2B export and supply arm — fulfills ANY demand, organic or conventional. Exports vegetables, fruits, spices, grains, medicines, Ayurvedic products, textiles, apparel, home goods, handicrafts, chemicals, raw materials — whatever the buyer needs. Shoumitra sources and supplies it. No restriction on product type.
 
-Generate 12 realistic, detailed leads based on these parameters:
+Generate 15 realistic, detailed leads based on these parameters:
 Business Focus: {business}
 Target Country/Region: {country}
 Product Niche: {niche}
@@ -186,30 +221,42 @@ Lead Type: {lead_type}
 Search Channels: {channels}
 Extra Keywords: {keywords}
 
-Return ONLY a valid JSON array with exactly 12 leads. Each lead must have these fields:
+Search across ALL these sources to find leads:
+MARKETPLACES: Amazon, Flipkart, Meesho, Etsy, IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub, Faire, Handshake
+SOCIAL MEDIA: Instagram shops, Facebook marketplace, LinkedIn company pages, Pinterest shops
+GOVERNMENT: DGFT exporters list, Startup India, MSME registry, GeM portal buyers, export promotion councils (EPCH, AEPC, APEDA)
+CORPORATE GIFTING: Corporate gifting companies, HR departments, event management firms, wedding planners, festival gifting buyers
+RETAIL: Organic stores, eco stores, boutiques, department stores, supermarket chains (Nature's Basket, Godrej Nature's Basket, BigBasket organic)
+HOSPITALITY: Hotels, resorts, spas, wellness centers, yoga studios looking for organic products
+SCHOOLS & INSTITUTIONS: Schools, NGOs, hospitals looking for organic/eco products for kids
+INTERNATIONAL: Import companies, distributors, wholesalers, fair trade organizations
+
+Return ONLY a valid JSON array with exactly 15 leads. Each lead must have:
 - name (string): Company or person name
 - type (string): "b2c" or "b2b"
-- category (string): e.g. "Organic Retailer", "Eco Store", "Wholesale Buyer"
+- category (string): be specific e.g. "Amazon Seller", "Corporate Gifting", "Government Buyer", "Hotel Chain", "Organic Supermarket", "Export Distributor", "NGO", "Wedding Planner"
 - country (string)
 - city (string)
-- email (string): realistic email
+- email (string): realistic business email
 - phone (string): realistic phone with country code
 - website (string): realistic URL
 - instagram (string): @handle
-- linkedin (string): LinkedIn URL
+- linkedin (string): realistic LinkedIn URL
+- facebook (string): realistic Facebook page URL
 - whatsapp (string): phone number
 - description (string): 1-2 sentence description
-- why_good (string): why this is a good lead for Silasya/Shoumitra
-- potential_value (string): e.g. "High", "Medium", "$5,000-$10,000/month"
+- why_good (string): why this is a good lead for Silasya/Shoumitra specifically
+- potential_value (string): estimated monthly value e.g. "$5,000-$10,000/month"
 - score (number): 1-100 lead quality score
-- tags (array of strings): relevant tags
-- source (string): where this lead was found
+- tags (array of strings): relevant tags including source platform
+- source (string): exact platform/website where this lead was found
+- score_reason (string): 1 sentence explaining why this score was given
 
 Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=4000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -230,6 +277,7 @@ Return ONLY the JSON array, no other text."""
         cursor.close()
         conn.close()
 
+        cache_set(cache_key, leads)
         return jsonify({"success": True, "leads": leads, "count": len(leads)})
 
     except json.JSONDecodeError as e:
@@ -262,6 +310,10 @@ def get_leads():
             query += " AND (name LIKE %s OR email LIKE %s OR country LIKE %s OR category LIKE %s)"
             s = f"%{search}%"
             params.extend([s, s, s, s])
+        category_filter = request.args.get("category", "")
+        if category_filter:
+            query += " AND category = %s"
+            params.append(category_filter)
 
         query += " ORDER BY created_at DESC"
         cursor.execute(query, params)
@@ -293,11 +345,43 @@ def save_lead():
             return jsonify({"error": "No data provided"}), 400
 
         name = data.get("name") or "Unknown Lead"
+        email = data.get("email", "")
+        phone = data.get("phone", "")
+        country = data.get("country", "")
         tags = data.get("tags", [])
         if isinstance(tags, list):
             tags = json.dumps(tags)
 
         conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check for duplicate by email
+        if email:
+            cursor.execute("SELECT id, name FROM leads WHERE email = %s", (email,))
+            existing = cursor.fetchone()
+            if existing:
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    "success": False,
+                    "duplicate": True,
+                    "id": existing["id"],
+                    "message": f"'{name}' already saved (duplicate email)"
+                })
+
+        # Check for duplicate by name + country
+        cursor.execute("SELECT id, name FROM leads WHERE name = %s AND country = %s", (name, country))
+        existing = cursor.fetchone()
+        if existing:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "success": False,
+                "duplicate": True,
+                "id": existing["id"],
+                "message": f"'{name}' from {country} already exists in Lead Bank"
+            })
+
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO leads (name, type, category, country, city, email, phone, website,
@@ -308,10 +392,10 @@ def save_lead():
             name,
             data.get("type", "b2c"),
             data.get("category", ""),
-            data.get("country", ""),
+            country,
             data.get("city", ""),
-            data.get("email", ""),
-            data.get("phone", ""),
+            email,
+            phone,
             data.get("website", ""),
             data.get("instagram", ""),
             data.get("linkedin", ""),
@@ -670,7 +754,12 @@ def update_reminder(reminder_id):
         data = request.get_json()
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE reminders SET done=%s WHERE id=%s", (data.get("done", 1), reminder_id))
+        if "remind_at" in data:
+            cursor.execute("UPDATE reminders SET done=%s, remind_at=%s WHERE id=%s",
+                         (data.get("done", 0), data.get("remind_at"), reminder_id))
+        else:
+            cursor.execute("UPDATE reminders SET done=%s WHERE id=%s",
+                         (data.get("done", 1), reminder_id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -707,20 +796,23 @@ def logout():
     return jsonify({"success": True})
 
 
-# ─── Main ────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
-    print("📦 Initializing database...")
-    init_db()
-    port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
-    print(f"✅ App running at http://localhost:{port}")
-    print(f"📋 Share with team: http://YOUR_IP:{port}")
-    app.run(host="0.0.0.0", port=port, debug=debug)
-
 
 # ─── Buyer Requirements ───────────────────────────────────────────────────────
+
+
+
+@app.route("/api/team/<int:member_id>", methods=["DELETE"])
+def delete_team_member(member_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM team_members WHERE id=%s AND email != 'admin@silasya.com'", (member_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/buyer-requirements", methods=["POST"])
 def buyer_requirements():
@@ -728,29 +820,62 @@ def buyer_requirements():
         data = request.get_json()
         niche = data.get("niche", "organic products")
         country = data.get("country", "worldwide")
+        business = data.get("business", "both")
+        buyer_type = data.get("buyer_type", "all")
+        keywords = data.get("keywords", "")
+
+        # Check cache first
+        cache_key = make_key("rfq", niche, country, business, buyer_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert. Generate 10 realistic buyer requirements/RFQs for:
+        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian B2B export company specializing in Indian arts, crafts and goods:
+ARTS & CRAFTS: Folk paintings (Madhubani, Warli, Pattachitra, Gond), wooden handicrafts, marble/stone crafts, brass/copper/Dhokra metalwork, blue pottery, paper mache, tribal art, Kundan/Meenakari jewellery
+TEXTILES: Embroidery/Zari/Zardozi, block print/batik/tie-dye, Banarasi/Kanjivaram silk sarees, handloom carpets/durries, leather crafts/Mojari
+FOOD & WELLNESS: Spices, Ayurvedic products, dry fruits, processed foods
+NOTE: No fresh produce, dairy or perishables. Find 10 realistic buyer requirements for:
+Business Focus: {business}
 Product Niche: {niche}
 Target Country: {country}
+Preferred Buyer Type: {buyer_type}
+Extra Keywords: {keywords}
+
+Search across ALL these buyer sources:
+TRADE PORTALS: IndiaMART, Alibaba, TradeIndia, Global Sources, EC21, ExportHub, Faire, Handshake
+GOVERNMENT: GeM portal bulk buyers, government school/hospital tenders, DGFT registered importers, CSR bulk buyers, export promotion councils (EPCH, AEPC, APEDA)
+CORPORATE GIFTING: Corporate gifting companies, HR departments buying festival/Diwali gifts, event management firms, wedding planners buying bulk gifts
+HOSPITALITY: Hotels, resorts, spas, wellness centers, yoga studios, Ayurveda centers buying organic products in bulk
+RETAIL CHAINS: Supermarket chains, organic store chains (Nature's Basket, Whole Foods), department stores, boutique chains
+SCHOOLS & INSTITUTIONS: Schools, NGOs, hospitals, charitable trusts, orphanages buying organic/eco products
+INTERNATIONAL: Fair trade organizations, organic importers, wholesale distributors, Amazon FBA sellers
 
 Return ONLY a valid JSON array with 10 items. Each item must have:
-- company (string): buyer company name
+- buyer_name (string): buyer company or person name
+- buyer_type (string): e.g. "Corporate Gifting", "Government Tender", "Hotel Chain", "NGO", "School", "Retail Chain", "International Importer", "Wedding Planner", "Spa & Wellness"
 - country (string)
 - city (string)
-- requirement (string): what they are looking for
+- requirement (string): exactly what they need
 - quantity (string): e.g. "500 units/month"
 - budget (string): e.g. "$5,000-$10,000"
-- contact_email (string): realistic email
-- platform (string): where RFQ was posted e.g. "IndiaMART", "Alibaba", "TradeIndia"
+- contact_email (string): realistic business email
+- phone (string): realistic phone with country code
+- whatsapp (string): same as phone
+- website (string): realistic company website URL
+- linkedin (string): realistic LinkedIn URL e.g. "https://linkedin.com/company/name"
+- facebook (string): realistic Facebook page URL
+- platform (string): exact platform/source where this RFQ was found
 - urgency (string): "High", "Medium", or "Low"
-- posted_date (string): recent date
+- posted (string): e.g. "2 days ago"
+- match_score (number): 0-100 relevance score
+- notes (string): certifications needed, special requirements, additional details
 
 Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = message.content[0].text.strip()
@@ -760,6 +885,7 @@ Return ONLY the JSON array, no other text."""
         if start != -1 and end != -1:
             raw = raw[start:end+1]
         results = json.loads(raw)
+        cache_set(cache_key, results)
         return jsonify({"success": True, "results": results, "count": len(results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -773,29 +899,67 @@ def find_competitors():
         data = request.get_json()
         niche = data.get("niche", "organic products")
         country = data.get("country", "India")
+        business = data.get("business", "both")
+        comp_type = data.get("comp_type", "all")
+        keywords = data.get("keywords", "")
+
+        # Check cache first
+        cache_key = make_key("comp", niche, country, business, comp_type, keywords)
+        cached = cache_get(cache_key)
+        if cached:
+            return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for an Indian organic brand in:
+        prompt = f"""You are a competitive intelligence expert. Find 10 competitors for:
+- SILASYA: Indian organic B2C brand (apparel, toys, home decor)
+- SHOUMITRA: Indian B2B export/supply company that fulfills ANY demand — vegetables, fruits, spices, medicines, textiles, handicrafts, chemicals, raw materials, processed foods — organic or conventional
+
+Find competitors in:
+Business Focus: {business}
 Product Niche: {niche}
 Country: {country}
+Competitor Type Focus: {comp_type}
+Extra Keywords: {keywords}
+
+Search across ALL these channels:
+MARKETPLACES: Amazon sellers, Flipkart sellers, Meesho sellers, Etsy shops, Faire brands
+SOCIAL MEDIA: Instagram organic brands, Facebook shops, Pinterest sellers
+D2C WEBSITES: Brands selling directly on their own website
+EXPORT PLATFORMS: Alibaba stores, IndiaMART suppliers, TradeIndia sellers
+GOVERNMENT REGISTERED: MSME registered organic brands, Startup India registered, GI tagged products
+RETAIL: Brands in Nature's Basket, Whole Foods, organic stores, boutiques
+HOSPITALITY SUPPLIERS: Brands supplying hotels, spas, wellness centers
+CORPORATE GIFTING BRANDS: Brands focused on corporate gifting market
+INTERNATIONAL: Fair trade certified brands, organic certified exporters
 
 Return ONLY a valid JSON array with 10 items. Each item must have:
 - name (string): competitor brand name
 - country (string)
-- website (string): realistic URL
-- instagram (string): @handle
+- city (string): their main city
+- website (string): realistic URL starting with https://
+- instagram (string): @handle without spaces
+- linkedin (string): realistic LinkedIn URL
+- facebook (string): realistic Facebook page URL
+- email (string): realistic contact email
+- phone (string): realistic phone with country code
+- whatsapp (string): same as phone
 - price_range (string): e.g. "₹500-₹2000" or "$10-$50"
-- strengths (string): 1 sentence
-- weaknesses (string): 1 sentence
-- how_to_beat (string): 1 sentence strategy
-- market_share (string): "High", "Medium", or "Low"
-- platform (string): where they are strongest e.g. "Instagram", "Amazon", "Alibaba"
+- products (string): exactly what they sell
+- strengths (string): their main strength in 1 sentence
+- weaknesses (string): their main weakness in 1 sentence
+- how_to_beat (string): specific actionable strategy to beat them
+- threat_level (string): "High", "Medium", or "Low"
+- platform (string): their strongest sales channel
+- selling_channels (string): all platforms they sell on
+- monthly_revenue (string): estimated monthly revenue
+- target_market (string): exactly who they sell to
+- certifications (string): any certifications e.g. "GOTS, OEKO-TEX, Fair Trade"
 
 Return ONLY the JSON array, no other text."""
 
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=3000,
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = message.content[0].text.strip()
@@ -805,6 +969,347 @@ Return ONLY the JSON array, no other text."""
         if start != -1 and end != -1:
             raw = raw[start:end+1]
         results = json.loads(raw)
+        cache_set(cache_key, results)
         return jsonify({"success": True, "results": results, "count": len(results)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+
+
+# ─── Email Notifications ──────────────────────────────────────────────────────
+
+def get_team_emails():
+    """Get all team member emails from DB"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT email, name FROM team_members WHERE email != 'admin@silasya.com'")
+        members = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return members
+    except:
+        return []
+
+
+@app.route("/api/notifications", methods=["GET"])
+def get_notifications():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        # Create table if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255),
+                message TEXT,
+                type VARCHAR(50) DEFAULT 'info',
+                is_read TINYINT DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
+        cursor.execute("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20")
+        notifs = cursor.fetchall()
+        cursor.execute("SELECT COUNT(*) as unread FROM notifications WHERE is_read=0")
+        unread = cursor.fetchone()["unread"]
+        for n in notifs:
+            if n.get("created_at"):
+                n["created_at"] = n["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "notifications": notifs, "unread": unread})
+    except Exception as e:
+        return jsonify({"success": True, "notifications": [], "unread": 0})
+
+
+@app.route("/api/notifications/read", methods=["POST"])
+def mark_notifications_read():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE notifications SET is_read=1")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def add_notification(title, message, notif_type="info"):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO notifications (title, message, type) VALUES (%s,%s,%s)",
+            (title, message, notif_type)
+        )
+        # Keep only last 50 notifications
+        cursor.execute("""
+            DELETE FROM notifications WHERE id NOT IN (
+                SELECT id FROM (SELECT id FROM notifications ORDER BY created_at DESC LIMIT 50) AS tmp
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+
+# ─── Auto Search ──────────────────────────────────────────────────────────────
+
+AUTO_SEARCH_NICHES = [
+    "Organic Apparel / Clothing",
+    "Home Décor / Sustainable Living",
+    "Organic Toys / Kids",
+    "Organic Gift Sets / Lifestyle",
+    "Fresh Vegetables / Fruits",
+    "Spices / Condiments",
+]
+
+def run_auto_search():
+    """Runs every 6 hours — finds new leads and saves them automatically"""
+    while True:
+        try:
+            # Wait 6 hours
+            threading.Event().wait(6 * 60 * 60)
+
+            print("🤖 Auto-search running...")
+
+            api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+            if not api_key or not api_key.startswith("sk-ant-"):
+                print("❌ Auto-search skipped: No API key")
+                continue
+
+            # Pick a niche to search (rotate through them)
+            import random
+            niche = random.choice(AUTO_SEARCH_NICHES)
+            countries = ["India", "Germany", "USA", "UAE", "UK"]
+            country = random.choice(countries)
+
+            client = anthropic.Anthropic(api_key=api_key)
+            prompt = f"""You are a lead generation expert for Silasya (organic B2C) and Shoumitra (B2B export).
+Find 5 fresh, realistic leads for:
+Niche: {niche}
+Country: {country}
+
+Return ONLY a valid JSON array with 5 leads. Each must have:
+- name, type (b2c/b2b), category, country, city, email, phone, website, description, why_good, potential_value, score (1-100), tags (array), source
+Return ONLY the JSON array."""
+
+            message = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=3000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            raw = message.content[0].text.strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            start = raw.find("[")
+            end = raw.rfind("]")
+            if start != -1 and end != -1:
+                raw = raw[start:end+1]
+
+            leads = json.loads(raw)
+            saved_count = 0
+
+            conn = get_db()
+            cursor = conn.cursor(dictionary=True)
+
+            for lead in leads:
+                name = lead.get("name") or "Unknown"
+                email = lead.get("email", "")
+                country_val = lead.get("country", "")
+
+                # Check duplicate
+                if email:
+                    cursor.execute("SELECT id FROM leads WHERE email=%s", (email,))
+                    if cursor.fetchone():
+                        continue
+                cursor.execute("SELECT id FROM leads WHERE name=%s AND country=%s", (name, country_val))
+                if cursor.fetchone():
+                    continue
+
+                tags = lead.get("tags", [])
+                if isinstance(tags, list):
+                    tags = json.dumps(tags)
+
+                cursor.execute("""
+                    INSERT INTO leads (name, type, category, country, city, email, phone,
+                        website, description, why_good, potential_value, tags, score,
+                        status, source, saved_by)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    name, lead.get("type","b2b"), lead.get("category",""),
+                    country_val, lead.get("city",""), email,
+                    lead.get("phone",""), lead.get("website",""),
+                    lead.get("description",""), lead.get("why_good",""),
+                    lead.get("potential_value",""), tags,
+                    int(lead.get("score",50)), "new",
+                    lead.get("source","Auto Search"), "Auto Search"
+                ))
+                saved_count += 1
+
+            conn.commit()
+
+            # Log the search
+            cursor.execute(
+                "INSERT INTO auto_search_log (niche, leads_found) VALUES (%s,%s)",
+                (niche, saved_count)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            # Send notification
+            if saved_count > 0:
+                add_notification(
+                    f"🤖 Auto Search Found {saved_count} New Leads!",
+                    f"Found {saved_count} new leads for '{niche}' in {country}. Check your Lead Bank!",
+                    "success"
+                )
+                print(f"✅ Auto-search saved {saved_count} leads for {niche} in {country}")
+            else:
+                print(f"ℹ️ Auto-search found no new leads for {niche} in {country}")
+
+        except Exception as e:
+            print(f"❌ Auto-search error: {e}")
+            add_notification("⚠️ Auto Search Error", str(e), "error")
+            threading.Event().wait(60 * 60)  # Wait 1 hour on error
+
+
+
+@app.route("/api/auto-search/run", methods=["POST"])
+def manual_auto_search():
+    """Admin can trigger auto-search manually"""
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+        if not api_key or not api_key.startswith("sk-ant-"):
+            return jsonify({"error": "API key not configured"}), 500
+
+        data = request.get_json() or {}
+        niche = data.get("niche", "Organic Apparel / Clothing")
+        country = data.get("country", "India")
+
+        client = anthropic.Anthropic(api_key=api_key)
+        prompt = f"""You are a lead generation expert for Silasya (organic B2C) and Shoumitra (B2B export).
+Find 5 fresh, realistic leads for:
+Niche: {niche}
+Country: {country}
+
+Return ONLY a valid JSON array with 5 leads. Each must have:
+- name, type (b2c/b2b), category, country, city, email, phone, website, description, why_good, potential_value, score (1-100), tags (array), source
+Return ONLY the JSON array."""
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        raw = message.content[0].text.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.find("[")
+        end = raw.rfind("]")
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
+
+        leads = json.loads(raw)
+        saved_count = 0
+        saved_leads = []
+
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+
+        for lead in leads:
+            name = lead.get("name") or "Unknown"
+            email = lead.get("email", "")
+            country_val = lead.get("country", "")
+
+            if email:
+                cursor.execute("SELECT id FROM leads WHERE email=%s", (email,))
+                if cursor.fetchone():
+                    continue
+            cursor.execute("SELECT id FROM leads WHERE name=%s AND country=%s", (name, country_val))
+            if cursor.fetchone():
+                continue
+
+            tags = lead.get("tags", [])
+            if isinstance(tags, list):
+                tags = json.dumps(tags)
+
+            cursor.execute("""
+                INSERT INTO leads (name, type, category, country, city, email, phone,
+                    website, description, why_good, potential_value, tags, score,
+                    status, source, saved_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                name, lead.get("type","b2b"), lead.get("category",""),
+                country_val, lead.get("city",""), email,
+                lead.get("phone",""), lead.get("website",""),
+                lead.get("description",""), lead.get("why_good",""),
+                lead.get("potential_value",""), tags,
+                int(lead.get("score",50)), "new",
+                lead.get("source","Manual Search"), "Admin"
+            ))
+            saved_count += 1
+            lead["id"] = cursor.lastrowid
+            saved_leads.append(lead)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if saved_count > 0:
+            add_notification(
+                f"▶️ Manual Search Found {saved_count} New Leads!",
+                f"Admin triggered search found {saved_count} new leads for '{niche}' in {country}.",
+                "success"
+            )
+
+        return jsonify({"success": True, "saved": saved_count, "leads": saved_leads})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/test-email", methods=["POST"])
+def test_email():
+    try:
+        resend_key = os.getenv("RESEND_API_KEY", "").strip()
+        sender = os.getenv("MAIL_SENDER", "onboarding@resend.dev").strip()
+        members = get_team_emails()
+        if not resend_key:
+            return jsonify({"error": "RESEND_API_KEY not set in Railway Variables"})
+        if not members:
+            return jsonify({"error": "No team members in Team tab"})
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+            json={"from": f"Silasya Lead Finder <{sender}>", "to": [members[0]["email"]], "subject": "Test Email from Silasya Lead Finder", "html": f"<h2>Test!</h2><p>Hi {members[0]['name']}, emails are working!</p>"},
+            timeout=10
+        )
+        if r.status_code in [200, 201]:
+            return jsonify({"success": True, "message": f"Email sent to {members[0]['email']}!", "all_recipients": [m["email"] for m in members]})
+        else:
+            return jsonify({"success": False, "error": r.text, "status_code": r.status_code})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
+    print("📦 Initializing database...")
+    init_db()
+    port = int(os.getenv("PORT", 5000))
+    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    print(f"✅ App running at http://localhost:{port}")
+    print(f"📋 Share with team: http://YOUR_IP:{port}")
+    # Start auto-search background thread
+    auto_thread = threading.Thread(target=run_auto_search, daemon=True)
+    auto_thread.start()
+    print("🤖 Auto-search started (every 6 hours)")
+    app.run(host="0.0.0.0", port=port, debug=debug)
