@@ -997,45 +997,34 @@ def get_team_emails():
         return []
 
 def send_email_notification(subject, html_body):
-    """Send email to all team members"""
-    sender = os.getenv("MAIL_SENDER", "").strip()
-    password = os.getenv("MAIL_PASSWORD", "").strip()
-    if not sender or not password:
-        print("⚠️ Email not configured — skipping")
+    """Send email via Resend API over HTTPS"""
+    resend_key = os.getenv("RESEND_API_KEY", "").strip()
+    if not resend_key:
+        print("RESEND_API_KEY not set")
         return False
-    
     members = get_team_emails()
     if not members:
-        print("⚠️ No team members to email")
+        print("No team members")
         return False
-
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(sender, password)
-
-        for member in members:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"Silasya Lead Finder <{sender}>"
-            msg["To"] = member["email"]
-            
+    sender = os.getenv("MAIL_SENDER", "onboarding@resend.dev").strip()
+    success_count = 0
+    for member in members:
+        try:
             personal_html = html_body.replace("{{name}}", member["name"])
-            msg.attach(MIMEText(personal_html, "html"))
-            
-            try:
-                server.sendmail(sender, member["email"], msg.as_string())
-                print(f"✅ Email sent to {member['email']}")
-            except Exception as e:
-                print(f"❌ Failed to send to {member['email']}: {e}")
-
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"❌ Email error: {e}")
-        import traceback
-        traceback.print_exc()
-        return False, str(e)
+            r = requests.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                json={"from": f"Silasya Lead Finder <{sender}>", "to": [member["email"]], "subject": subject, "html": personal_html},
+                timeout=10
+            )
+            if r.status_code in [200, 201]:
+                print(f"Email sent to {member['email']}")
+                success_count += 1
+            else:
+                print(f"Email failed to {member['email']}: {r.text}")
+        except Exception as e:
+            print(f"Email error: {e}")
+    return success_count > 0
 
 def send_new_leads_email(leads, niche, country):
     """Send email when new leads are found"""
