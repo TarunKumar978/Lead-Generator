@@ -2513,6 +2513,26 @@ _Silasya × Shoumitra AI Lead Finder_`;
   const encoded = encodeURIComponent(msg);
   window.open('https://wa.me/?text='+encoded, '_blank');
 }
+
+async function editNotes(id){
+  let currentNote = '';
+  try{
+    const r = await fetch(API+'/api/leads?limit=500');
+    const d = await r.json();
+    const lead = (d.leads||[]).find(l=>l.id===id);
+    currentNote = lead?.notes || '';
+  }catch(e){}
+  const note = prompt('Add/edit note for this lead:', currentNote);
+  if(note === null) return;
+  try{
+    await fetch(API+'/api/leads/'+id, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({notes: note})
+    });
+    loadCRMLeads();
+  }catch(e){ alert('Failed to save note: '+e.message); }
+}
 </script>
 
 <!-- Email Writer Modal -->
