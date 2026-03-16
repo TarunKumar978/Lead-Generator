@@ -1,3 +1,25 @@
+from flask import Flask, request, jsonify, render_template, session, Response
+from flask_cors import CORS
+import mysql.connector
+from mysql.connector import pooling
+import os
+import json
+import anthropic
+from datetime import datetime
+from dotenv import load_dotenv
+import threading
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime, timedelta
+
+load_dotenv()
+
+# ─── Simple In-Memory Cache ───────────────────────────────────────────────────
+import hashlib, time
+_cache = {}
+CACHE_TTL = 86400  # 24 hours
+
 def cache_get(key):
     if key in _cache:
         data, ts = _cache[key]
