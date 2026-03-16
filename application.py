@@ -1372,3 +1372,60 @@ def clear_cache():
     global _cache
     _cache = {}
     return jsonify({"success": True, "message": "Cache cleared"})
+
+
+@app.route("/api/saved-searches", methods=["GET"])
+def get_saved_searches():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM saved_searches ORDER BY created_at DESC")
+        searches = cursor.fetchall()
+        for s in searches:
+            if s.get("created_at"):
+                s["created_at"] = s["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "searches": searches})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/saved-searches", methods=["POST"])
+def save_search():
+    try:
+        data = request.get_json()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO saved_searches (name, business, niche, country, lead_type, keywords, saved_by)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            data.get("name","My Search"),
+            data.get("business","both"),
+            data.get("niche",""),
+            data.get("country",""),
+            data.get("lead_type","all"),
+            data.get("keywords",""),
+            data.get("saved_by","Team")
+        ))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/saved-searches/<int:search_id>", methods=["DELETE"])
+def delete_saved_search(search_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM saved_searches WHERE id=%s", (search_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -1518,6 +1518,7 @@ async function fetchWithTimeout(url, options={}, timeout=115000){
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 checkStatus();
+loadSavedSearches();
 setInterval(loadStats, 30000);
 
 async function doSignOut(){
@@ -2327,6 +2328,61 @@ function repeatSearch(h){
     const btn = document.querySelector('.btn-gold[onclick*="findLeads"]');
     if(btn) btn.scrollIntoView({behavior:'smooth'});
   }, 300);
+}
+
+// ── Saved Searches ────────────────────────────────────────────────────────────
+async function loadSavedSearches(){
+  try{
+    const r = await fetch(API+'/api/saved-searches');
+    const d = await r.json();
+    const bar = document.getElementById('saved-searches-bar');
+    if(!bar) return;
+    if(!d.searches || !d.searches.length){
+      bar.innerHTML = '';
+      return;
+    }
+    bar.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em">⭐ Saved Searches</div>' +
+      d.searches.map(s=>`
+        <button onclick="loadSavedSearch(${s.id})" style="display:inline-flex;align-items:center;gap:6px;margin:3px;padding:5px 12px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:20px;color:var(--gold);font-size:12px;cursor:pointer">
+          ${s.name}
+          <span onclick="event.stopPropagation();deleteSavedSearch(${s.id})" style="color:var(--muted);font-size:10px">✕</span>
+        </button>
+      `).join('');
+  }catch(e){}
+}
+
+async function saveCurrentSearch(){
+  const name = prompt('Name this search:', document.getElementById('s-niche')?.value || 'My Search');
+  if(!name) return;
+  const data = {
+    name,
+    business: document.getElementById('s-business')?.value || 'both',
+    niche: document.getElementById('s-niche')?.value || '',
+    country: document.getElementById('s-country')?.value || '',
+    lead_type: document.getElementById('s-leadtype')?.value || 'all',
+    keywords: document.getElementById('s-keywords')?.value || '',
+    saved_by: document.getElementById('searcher-name')?.value || 'Team'
+  };
+  const r = await fetch(API+'/api/saved-searches', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  const d = await r.json();
+  if(d.success){ loadSavedSearches(); }
+}
+
+async function loadSavedSearch(id){
+  const r = await fetch(API+'/api/saved-searches');
+  const d = await r.json();
+  const s = d.searches.find(x=>x.id===id);
+  if(!s) return;
+  if(document.getElementById('s-business')) document.getElementById('s-business').value = s.business||'both';
+  if(document.getElementById('s-niche')) document.getElementById('s-niche').value = s.niche||'';
+  if(document.getElementById('s-country')) document.getElementById('s-country').value = s.country||'';
+  if(document.getElementById('s-leadtype')) document.getElementById('s-leadtype').value = s.lead_type||'all';
+  if(document.getElementById('s-keywords')) document.getElementById('s-keywords').value = s.keywords||'';
+}
+
+async function deleteSavedSearch(id){
+  await fetch(API+`/api/saved-searches/${id}`, {method:'DELETE'});
+  loadSavedSearches();
 }
 </script>
 
