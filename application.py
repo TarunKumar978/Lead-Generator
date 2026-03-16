@@ -1439,7 +1439,7 @@ def test_email():
                 "smtp": "failed",
                 "smtp_error": smtp_error,
                 "sender": sender,
-                "hint": "Check MAIL_PASSWORD - must be Gmail App Password not regular password"
+                "hint": "Check RESEND_API_KEY in Railway Variables - must start with re_"
             })
     except Exception as e:
         return jsonify({"error": str(e)})
