@@ -1,30 +1,3 @@
-"""
-Silasya & Shumitra — AI Lead Finder
-Flask + MySQL Backend
-"""
-
-from flask import Flask, request, jsonify, render_template, session, Response
-from flask_cors import CORS
-import mysql.connector
-from mysql.connector import pooling
-import os
-import json
-import anthropic
-from datetime import datetime
-from dotenv import load_dotenv
-import threading
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
-
-load_dotenv()
-
-# ─── Simple In-Memory Cache ───────────────────────────────────────────────────
-import hashlib, time
-_cache = {}
-CACHE_TTL = 86400  # 24 hours
-
 def cache_get(key):
     if key in _cache:
         data, ts = _cache[key]
@@ -1386,66 +1359,65 @@ Return ONLY the JSON array."""
 @app.route("/api/test-email", methods=["POST"])
 def test_email():
     try:
-        resend_key = os.getenv("RESEND_API_KEY", "").strip()
-        sender = os.getenv("MAIL_SENDER", "onboarding@resend.dev").strip()
+        sender = os.getenv("MAIL_SENDER", "").strip()
+        password = os.getenv("MAIL_PASSWORD", "").strip()
         members = get_team_emails()
-
-        if not resend_key:
-            return jsonify({"error": "RESEND_API_KEY not set in Railway Variables"})
+        
+        if not sender:
+            return jsonify({"error": "MAIL_SENDER not set in Railway Variables"})
+        if not password:
+            return jsonify({"error": "MAIL_PASSWORD not set in Railway Variables"})
         if not members:
-            return jsonify({"error": "No team members in Team tab"})
-
-        # Test Resend API directly
-        r = requests.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-            json={
-                "from": f"Silasya Lead Finder <{sender}>",
-                "to": [members[0]["email"]],
-                "subject": "Test Email from Silasya Lead Finder",
-                "html": f"<h2>Test email working!</h2><p>Hi {members[0]['name']}, notifications are working!</p>"
-            },
-            timeout=10
-        )
-        if r.status_code in [200, 201]:
+            return jsonify({"error": "No team members found in Team tab"})
+            
+        import smtplib
+        # Test SMTP connection directly
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+            server.starttls()
+            server.login(sender, password)
+            server.quit()
+            smtp_ok = True
+            smtp_error = None
+        except Exception as smtp_e:
+            smtp_ok = False
+            smtp_error = str(smtp_e)
+            
+        if smtp_ok:
+            result = send_email_notification(
+                "🧪 Test Email from Silasya Lead Finder",
+                "<h2>Test email working!</h2><p>Hi {{name}}, your email notifications are set up correctly.</p>"
+            )
             return jsonify({
-                "success": True,
-                "message": f"Test email sent to {members[0]['email']}!",
-                "recipients": [m["email"] for m in members]
+                "success": result,
+                "smtp": "connected",
+                "sender": sender,
+                "recipients": [m["email"] for m in members],
+                "message": "Email sent!" if result else "Email failed"
             })
         else:
             return jsonify({
                 "success": False,
-                "error": r.text,
-                "hint": "Check RESEND_API_KEY and MAIL_SENDER in Railway Variables"
+                "smtp": "failed",
+                "smtp_error": smtp_error,
+                "sender": sender,
+                "hint": "Check RESEND_API_KEY in Railway Variables - must start with re_"
             })
     except Exception as e:
         return jsonify({"error": str(e)})
 
-"""
-Silasya & Shumitra — AI Lead Finder
-Flask + MySQL Backend
-"""
+# ─── Main ────────────────────────────────────────────────────────────────────
 
-from flask import Flask, request, jsonify, render_template, session, Response
-from flask_cors import CORS
-import mysql.connector
-from mysql.connector import pooling
-import os
-import json
-import anthropic
-from datetime import datetime
-from dotenv import load_dotenv
-import threading
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
-
-load_dotenv()
-
-# ─── Simple In-Memory Cache ───────────────────────────────────────────────────
-import hashlib, time
-_cache = {}
-CACHE_TTL = 86400  # 24 hours
-
+if __name__ == "__main__":
+    print("🚀 Starting Silasya & Shoumitra Lead Finder...")
+    print("📦 Initializing database...")
+    init_db()
+    port = int(os.getenv("PORT", 5000))
+    debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    print(f"✅ App running at http://localhost:{port}")
+    print(f"📋 Share with team: http://YOUR_IP:{port}")
+    # Start auto-search background thread
+    auto_thread = threading.Thread(target=run_auto_search, daemon=True)
+    auto_thread.start()
+    print("🤖 Auto-search started (every 6 hours)")
+    app.run(host="0.0.0.0", port=port, debug=debug)
