@@ -1081,9 +1081,11 @@ function renderCRMTable(leads){
       <td style="color:var(--muted);font-size:11px">${date}</td>
       <td>
         <div style="display:flex;gap:4px">
-          <button onclick="shareLeadViaWhatsApp(${JSON.stringify(l).replace(/\"/g,'&quot;')})" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer" title="Share via WhatsApp">📲</button>
-          <button onclick="editNotes(${l.id})" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📝${l.notes?'✓':''}</button>
-          <button onclick="openContactLog(${l.id},'${(l.name||'').replace(/'/g,\'\')}')" style="background:rgba(62,207,122,0.1);border:1px solid rgba(62,207,122,0.2);color:var(--green);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📞</button>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button onclick="shareLeadViaWhatsAppById(${l.id})" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📲</button>
+          <button onclick="editNotes(${l.id})" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📝</button>
+          <button onclick="openContactLog(${l.id})" style="background:rgba(62,207,122,0.1);border:1px solid rgba(62,207,122,0.2);color:var(--green);border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer">📞</button>
           <button class="btn btn-red" style="padding:3px 7px;font-size:10px" onclick="deleteLead(${l.id})">✕</button>
         </div>
       </td>
@@ -2395,6 +2397,7 @@ async function deleteSavedSearch(id){
 let currentContactLeadId = null;
 
 function openContactLog(leadId, leadName){
+  leadName = leadName || document.querySelector(`#row-${leadId} td:nth-child(2)`)?.textContent || 'Lead';
   currentContactLeadId = leadId;
   document.getElementById('contact-log-lead-name').textContent = leadName;
   document.getElementById('contact-log-modal').style.display = 'flex';
@@ -2482,6 +2485,12 @@ _Found via Silasya × Shoumitra AI Lead Finder_`;
   window.open('https://wa.me/?text='+encoded, '_blank');
 }
 
+function shareLeadViaWhatsAppById(id){
+  const row = document.getElementById(`row-${id}`);
+  const name = row?.querySelector('td:nth-child(2)')?.textContent || '';
+  const l = {name, id};
+  shareLeadViaWhatsApp(l);
+}
 function shareLeadViaWhatsApp(l){
   const msg = `🌟 *Lead — Silasya × Shoumitra*
 
