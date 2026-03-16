@@ -534,14 +534,17 @@ tr:hover td{background:rgba(255,255,255,0.02)}
             <option value="Organic Toys / Kids">Organic Toys / Kids</option>
             <option value="Home Décor / Sustainable Living">Home Décor / Sustainable Living</option>
             <option value="Organic Gift Sets / Lifestyle">Organic Gift Sets / Lifestyle</option>
-            <option value="Handcrafted / Artisan Export">Handcrafted / Artisan Export</option>
-            <option value="Fresh Vegetables / Fruits">Fresh Vegetables / Fruits</option>
-            <option value="Spices / Condiments">Spices / Condiments</option>
-            <option value="Grains / Pulses">Grains / Pulses</option>
-            <option value="Medicines / Ayurvedic Products">Medicines / Ayurvedic Products</option>
-            <option value="Textiles / Fabric">Textiles / Fabric</option>
-            <option value="Processed Foods / Dry Fruits">Processed Foods / Dry Fruits</option>
-            <option value="All Categories">All Categories</option>
+            <option value="Handcrafted / Artisan Products">Handcrafted / Artisan Products</option>
+            <option value="Spices / Condiments / Herbs">Spices / Condiments / Herbs</option>
+            <option value="Ayurvedic / Herbal Products">Ayurvedic / Herbal Products</option>
+            <option value="Textiles / Fabric / Yarn">Textiles / Fabric / Yarn</option>
+            <option value="Dry Fruits / Nuts / Seeds">Dry Fruits / Nuts / Seeds</option>
+            <option value="Processed / Packaged Foods">Processed / Packaged Foods</option>
+            <option value="Leather / Jute / Coir Products">Leather / Jute / Coir Products</option>
+            <option value="Ceramics / Pottery / Glassware">Ceramics / Pottery / Glassware</option>
+            <option value="Chemicals / Raw Materials">Chemicals / Raw Materials</option>
+            <option value="Pharma / Medicine / Supplements">Pharma / Medicine / Supplements</option>
+            <option value="All Export Categories">All Export Categories</option>
           </select>
         </div>
         <div>
@@ -635,12 +638,16 @@ tr:hover td{background:rgba(255,255,255,0.02)}
             <option value="Organic Toys / Kids">Organic Toys / Kids</option>
             <option value="Home Décor / Sustainable Living">Home Décor / Sustainable Living</option>
             <option value="Organic Gift Sets / Lifestyle">Organic Gift Sets / Lifestyle</option>
-            <option value="Handcrafted / Artisan Export">Handcrafted / Artisan Export</option>
-            <option value="Fresh Vegetables / Fruits">Fresh Vegetables / Fruits</option>
-            <option value="Spices / Condiments">Spices / Condiments</option>
-            <option value="Textiles / Fabric">Textiles / Fabric</option>
-            <option value="Medicines / Ayurvedic Products">Medicines / Ayurvedic Products</option>
-            <option value="All Categories">All Categories</option>
+            <option value="Handcrafted / Artisan Products">Handcrafted / Artisan Products</option>
+            <option value="Spices / Condiments / Herbs">Spices / Condiments / Herbs</option>
+            <option value="Ayurvedic / Herbal Products">Ayurvedic / Herbal Products</option>
+            <option value="Textiles / Fabric / Yarn">Textiles / Fabric / Yarn</option>
+            <option value="Dry Fruits / Nuts / Seeds">Dry Fruits / Nuts / Seeds</option>
+            <option value="Processed / Packaged Foods">Processed / Packaged Foods</option>
+            <option value="Leather / Jute / Coir Products">Leather / Jute / Coir Products</option>
+            <option value="Ceramics / Pottery / Glassware">Ceramics / Pottery / Glassware</option>
+            <option value="Pharma / Medicine / Supplements">Pharma / Medicine / Supplements</option>
+            <option value="All Export Categories">All Export Categories</option>
           </select>
         </div>
         <div>
@@ -870,7 +877,7 @@ function leadCard(l, isSaved){
         <div class="lc-contact">${contacts.join('')}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-        <div class="sr ${sc}">${l.score}</div>
+        <div class="sr ${sc}" title="${scoreExplanation(l)}" style="cursor:help" onclick="alert(scoreExplanation(l))">${l.score}</div>
         <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${l.score>=80?'🔥 Hot':l.score>=60?'🌤 Warm':'✦ New'}</div>
       </div>
     </div>
@@ -2188,6 +2195,18 @@ function goToLeadBank(){
   notifOpen=false;
   const tab = document.querySelector('.nav-tab[onclick*="crm"]');
   if(tab) showPage('crm', tab);
+}
+
+function scoreExplanation(l){
+  if(l.score_reason) return "Score: "+l.score+"/100\n"+l.score_reason;
+  const reasons = [];
+  if(l.score >= 80) reasons.push("High conversion potential");
+  else if(l.score >= 60) reasons.push("Moderate potential");
+  else reasons.push("Needs qualification");
+  if(l.email) reasons.push("Has email");
+  if(l.phone) reasons.push("Has phone");
+  if(l.website) reasons.push("Has website");
+  return "Score: "+l.score+"/100\n"+reasons.join(", ");
 }
 </script>
 

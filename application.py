@@ -250,6 +250,7 @@ Return ONLY a valid JSON array with exactly 15 leads. Each lead must have:
 - score (number): 1-100 lead quality score
 - tags (array of strings): relevant tags including source platform
 - source (string): exact platform/website where this lead was found
+- score_reason (string): 1 sentence explaining why this score was given
 
 Return ONLY the JSON array, no other text."""
 
@@ -830,7 +831,7 @@ def buyer_requirements():
             return jsonify({"success": True, "results": cached, "count": len(cached), "cached": True})
 
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian export and supply company that fulfills ANY buyer demand (organic or conventional). Shoumitra can supply: fresh vegetables, fruits, spices, grains, pulses, medicines, Ayurvedic products, organic products, textiles, apparel, home decor, handicrafts, chemicals, raw materials, processed foods, dry fruits — anything a buyer needs. Find 10 realistic buyer requirements for:
+        prompt = f"""You are a B2B sourcing expert for Shoumitra — an Indian B2B export company specializing in: Spices & condiments, Ayurvedic & herbal products, Textiles & fabrics, Handcrafted & artisan goods, Dry fruits & nuts, Processed & packaged foods, Leather & jute products, Ceramics & pottery, Pharma & supplements, Chemicals & raw materials. NOTE: No fresh fruits, vegetables, dairy or perishable items. Find 10 realistic buyer requirements for:
 Business Focus: {business}
 Product Niche: {niche}
 Target Country: {country}
