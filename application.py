@@ -1300,6 +1300,27 @@ def test_email():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+@app.route("/api/version")
+def version():
+    return jsonify({"version": "2.0", "search_history": "enabled"})
+
+@app.route("/api/search-history", methods=["GET"])
+def get_search_history():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM search_history ORDER BY created_at DESC LIMIT 50")
+        history = cursor.fetchall()
+        for h in history:
+            if h.get("created_at"):
+                h["created_at"] = h["created_at"].isoformat()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "history": history})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     print("🚀 Starting Silasya & Shoumitra Lead Finder...")
     print("📦 Initializing database...")
