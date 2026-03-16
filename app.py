@@ -85,7 +85,7 @@ def get_pool():
     if connection_pool is None:
         connection_pool = pooling.MySQLConnectionPool(
             pool_name="silasya_pool",
-            pool_size=5,
+            pool_size=32,
             **db_config
         )
     return connection_pool
